@@ -44,3 +44,13 @@ func (master *Master) bestServer(excluded string) string {
 func (master *Master) tableLocation(table string) string {
 	return master.tableLoc[table]
 }
+
+func (master *Master) transferServerTables(src, dst string) {
+	pTables := master.serverTables[src]
+	for _, tab := range *pTables {
+		master.tableLoc[tab] = dst
+		master.addTable(tab, dst)
+	}
+
+	delete(master.serverTables, src)
+}

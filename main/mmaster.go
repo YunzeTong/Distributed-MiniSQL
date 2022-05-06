@@ -1,9 +1,9 @@
 package main
 
-import . "Distributed-MiniSQL/master"
+// import . "Distributed-MiniSQL/master"
 
-func main() {
-	var master Master
-	master.Init()
-	master.Serve()
-}
+// func main() {
+// 	var master Master
+// 	master.Init()
+// 	master.Serve()
+// }

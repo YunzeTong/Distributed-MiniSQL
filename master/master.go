@@ -4,7 +4,11 @@ import (
 	"bufio"
 	"log"
 	"net"
+	"strings"
 	"sync"
+	"time"
+
+	clientv3 "go.etcd.io/etcd/client/v3"
 
 	. "Distributed-MiniSQL/common"
 )
@@ -20,6 +24,8 @@ const (
 
 type Master struct {
 	mutex sync.Mutex
+
+	etcdClient *clientv3.Client
 
 	conns map[string]net.Conn
 
@@ -37,6 +43,15 @@ func (master *Master) Init() {
 }
 
 func (master *Master) Serve() {
+	// connect to local etcd server
+	master.etcdClient, _ = clientv3.New(clientv3.Config{
+		Endpoints:   []string{"http://" + HOST},
+		DialTimeout: 5 * time.Second,
+	})
+	defer master.etcdClient.Close()
+	go master.watch()
+
+	// handle incoming connections
 	ln, _ := net.Listen(NETWORK, ADDR) // https://pkg.go.dev/net#Listen
 	for {
 		conn, _ := ln.Accept()
@@ -84,20 +99,21 @@ func (master *Master) handleConn(conn net.Conn) {
 	}
 }
 
-func (master *Master) serveClient(opt int, info []string) string {
+func (master *Master) serveClient(opt int, msg string) string {
 	res := ""
 	switch opt {
 	case 1:
-		ip := master.tableLocation(info[0])
-		res = WrapMessage(MASTER, 1, []string{ip, info[0]})
+		ip := master.tableLocation(msg)
+		res = WrapMessage(MASTER, 1, strings.Join([]string{ip, msg}, SEP))
 	case 2:
-		res = WrapMessage(MASTER, 2, []string{master.bestServer(""), info[0]})
+		res = WrapMessage(MASTER, 2, strings.Join([]string{master.bestServer(""), msg}, SEP))
 	}
 	return res
 }
 
-func (master *Master) serveRegion(opt int, info []string, ip string) string {
+func (master *Master) serveRegion(opt int, msg, ip string) string {
 	res := ""
+	info := strings.Split(msg, SEP)
 	switch opt {
 	case 1:
 		// TODO: shouldn't this be done with zk/etcd?

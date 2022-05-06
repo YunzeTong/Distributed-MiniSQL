@@ -15,21 +15,25 @@ const (
 	NULL   Identity = 3
 
 	SEP = " "
+
+	// etcd
+	HOST       = "127.0.0.1:2379"
+	KEY_PREFIX = "REGION_"
 )
 
-func ParseMessage(msg string) (Identity, int, []string) {
+func ParseMessage(msg string) (Identity, int, string) {
 	// TODO
-	return MASTER, 0, []string{""} // place holder
+	return MASTER, 0, "" // place holder
 }
 
-func WrapMessage(identity Identity, opt int, info []string) string {
+func WrapMessage(identity Identity, opt int, msg string) string {
 	var builder strings.Builder
 
 	builder.WriteString(identityPrefix(identity))
 	builder.WriteByte('[')
 	builder.WriteByte('0' + byte(opt))
 	builder.WriteByte(']')
-	builder.WriteString(strings.Join(info, SEP))
+	builder.WriteString(msg)
 
 	return builder.String()
 }
