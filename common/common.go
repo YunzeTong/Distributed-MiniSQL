@@ -8,6 +8,7 @@ const (
 	PREFIX_CLIENT = "<client>"
 	PREFIX_MASTER = "<master>"
 	PREFIX_REGION = "<region>"
+	PREFIX_RESULT = "<result>"
 
 	CLIENT Identity = 0
 	MASTER Identity = 1
@@ -16,9 +17,18 @@ const (
 
 	SEP = " "
 
+	// networking
+	// https://pkg.go.dev/net#Listen
+	NETWORK = "tcp"
+
+	MASTER_IP   = "127.0.0.1" // pending
+	MASTER_PORT = ":4733"
+	MASTER_ADDR = MASTER_IP + MASTER_PORT
+
+	REGION_PORT = ":2016"
+
 	// etcd
-	HOST       = "127.0.0.1:2379"
-	KEY_PREFIX = "REGION_"
+	HOST_ADDR = "127.0.0.1:2379"
 )
 
 func ParseMessage(msg string) (Identity, int, string) {
@@ -26,29 +36,18 @@ func ParseMessage(msg string) (Identity, int, string) {
 	return MASTER, 0, "" // place holder
 }
 
-func WrapMessage(identity Identity, opt int, msg string) string {
+func WrapMessage(prefix string, opt int, msg string) string {
 	var builder strings.Builder
 
-	builder.WriteString(identityPrefix(identity))
-	builder.WriteByte('[')
-	builder.WriteByte('0' + byte(opt))
-	builder.WriteByte(']')
+	builder.WriteString(prefix)
+	if opt != -1 {
+		builder.WriteByte('[')
+		builder.WriteByte('0' + byte(opt))
+		builder.WriteByte(']')
+	}
 	builder.WriteString(msg)
 
 	return builder.String()
-}
-
-func identityPrefix(identity Identity) string {
-	var res string
-	switch identity {
-	case CLIENT:
-		res = PREFIX_CLIENT
-	case MASTER:
-		res = PREFIX_MASTER
-	case REGION:
-		res = PREFIX_REGION
-	}
-	return res
 }
 
 func AddUniqueToSlice(pSlice *[]string, str string) {
@@ -75,4 +74,13 @@ func DeleteFromSlice(pSlice *[]string, str string) {
 
 	(*pSlice)[index] = (*pSlice)[len(*pSlice)-1]
 	*pSlice = (*pSlice)[:len(*pSlice)-1]
+}
+
+// return self IP
+func GetHostIP() string {
+	return ""
+}
+
+func DeleteLocalFile(fileName string) {
+	// TODO
 }

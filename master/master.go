@@ -13,11 +13,6 @@ import (
 	. "Distributed-MiniSQL/common"
 )
 
-const (
-	NETWORK = "tcp"
-	ADDR    = ":8080"
-)
-
 // map values not addressable, yet everything in Go is passed by value
 // thus we need pointers to slices
 // check https://go.dev/play/p/rvqLX4XFgRK
@@ -45,14 +40,14 @@ func (master *Master) Init() {
 func (master *Master) Serve() {
 	// connect to local etcd server
 	master.etcdClient, _ = clientv3.New(clientv3.Config{
-		Endpoints:   []string{"http://" + HOST},
+		Endpoints:   []string{"http://" + HOST_ADDR},
 		DialTimeout: 5 * time.Second,
 	})
 	defer master.etcdClient.Close()
 	go master.watch()
 
 	// handle incoming connections
-	ln, _ := net.Listen(NETWORK, ADDR) // https://pkg.go.dev/net#Listen
+	ln, _ := net.Listen(NETWORK, MASTER_PORT)
 	for {
 		conn, _ := ln.Accept()
 		go master.handleConn(conn)
@@ -64,10 +59,6 @@ func (master *Master) handleConn(conn net.Conn) {
 	connRecorded := false
 
 	ip := conn.RemoteAddr().(*net.TCPAddr).IP.String() // https://go.dev/ref/spec#Type_assertions
-	// TODO: do we need this?
-	// if ip == "127.0.0.1" {
-	// 	ip = getHostAddress()
-	// }
 
 	reader := bufio.NewReader(conn)
 	// loop
@@ -104,9 +95,9 @@ func (master *Master) serveClient(opt int, msg string) string {
 	switch opt {
 	case 1:
 		ip := master.tableLocation(msg)
-		res = WrapMessage(MASTER, 1, strings.Join([]string{ip, msg}, SEP))
+		res = WrapMessage(PREFIX_MASTER, 1, strings.Join([]string{ip, msg}, SEP))
 	case 2:
-		res = WrapMessage(MASTER, 2, strings.Join([]string{master.bestServer(""), msg}, SEP))
+		res = WrapMessage(PREFIX_MASTER, 2, strings.Join([]string{master.bestServer(""), msg}, SEP))
 	}
 	return res
 }
@@ -134,7 +125,3 @@ func (master *Master) serveRegion(opt int, msg, ip string) string {
 	}
 	return res
 }
-
-// func getHostAddress() string {
-// 	return ""
-// }
