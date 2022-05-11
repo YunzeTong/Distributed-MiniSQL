@@ -12,18 +12,26 @@ import (
 )
 
 func (master *Master) watch() {
+	log.Println("ready to call watch")
+
 	watchChan := master.etcdClient.Watch(context.Background(), "", clientv3.WithPrefix())
+
+	log.Println("watch chan get")
 
 	for watchRes := range watchChan {
 		for _, event := range watchRes.Events {
 			// TODO: add mutex?
 			log.Printf("%s %q %q\n", event.Type, event.Kv.Key, event.Kv.Value)
-			ip := string(event.Kv.Value)
+			ip := string(event.Kv.Key)
 			switch event.Type {
 			case mvccpb.PUT:
 				client, ok := master.regionClients[ip]
 				if !ok {
-					client, _ = rpc.DialHTTP("tcp", ip+REGION_PORT)
+					var err error
+					client, err = rpc.DialHTTP("tcp", ip+REGION_PORT)
+					if err != nil {
+						log.Printf("rpc.DialHTTP err: %v", ip+REGION_PORT)
+					}
 					master.regionClients[ip] = client
 				}
 
@@ -39,9 +47,14 @@ func (master *Master) watch() {
 				} else {
 					temp := make([]string, 0)
 					master.serverTables[ip] = &temp
+					log.Printf("master.serverTables[%v] set", ip)
 				}
 			case mvccpb.DELETE:
-				tables := *master.serverTables[ip]
+				pT, ok := master.serverTables[ip]
+				if !ok {
+					log.Printf("no such kv pair in master.serverTables: %v", ip)
+				}
+				tables := *pT
 				if len(tables) == 0 {
 					continue
 				}
