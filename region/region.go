@@ -23,7 +23,7 @@ func (region *Region) Init() {
 	region.dbBridge.Construct()
 }
 
-func (region *Region) Serve() {
+func (region *Region) Run() {
 	// connect to local etcd server
 	region.etcdClient, _ = clientv3.New(clientv3.Config{
 		Endpoints:   []string{"http://" + HOST_ADDR},

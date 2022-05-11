@@ -37,7 +37,7 @@ func (master *Master) Init() {
 	master.tableLoc = make(map[string]string)
 }
 
-func (master *Master) Serve() {
+func (master *Master) Run() {
 	// connect to local etcd server
 	master.etcdClient, _ = clientv3.New(clientv3.Config{
 		Endpoints:   []string{"http://" + HOST_ADDR},
