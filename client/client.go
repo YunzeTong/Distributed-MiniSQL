@@ -2,6 +2,7 @@ package client
 
 import (
 	"Distributed-MiniSQL/common"
+	. "Distributed-MiniSQL/common"
 	"errors"
 	"fmt"
 	"net/rpc"
@@ -68,30 +69,96 @@ func (client *Client) Run() {
 			args.Table = table
 			args.Sql = input
 			ip := ""
-			commonCreateCall := client.rpcMaster.Go("Master.CreateTable", args, &ip, nil)
-
+			call, err := TimeoutRPC(client.rpcMaster.Go("Master.CreateTable", args, &ip, nil), TIMEOUT)
+			if err != nil {
+				fmt.Println("timeout")
+			}
+			if call.Error != nil {
+				fmt.Println("[from master to client]create table failed")
+			} else {
+				fmt.Println("create table succeed, table in ip: " + ip)
+			}
 		case DROP:
 			// call Master.DropTable rpc
 			res := false
-			// masterDropCall := client.rpcMaster.Go("Master.DropTable", table, &res, nil)
-			// MDreplyCall := <-masterDropCall.Done
+			call, err := TimeoutRPC(client.rpcMaster.Go("Master.DropTable", table, &res, nil), TIMEOUT)
+			if err != nil {
+				fmt.Println("timeout")
+			}
+			if call.Error != nil {
+				fmt.Println("[input error]drop table failed")
+			}
+			if res {
+				fmt.Println("drop table succeed")
+			} else {
+				fmt.Println("drop table failed")
+			}
 		case OTHERS:
+			// by default: only ip in ipCache, rpcregion will exist in rpcmap
 			ip, ok := client.ipCache[table]
 			if !ok {
 				ip = client.updateCache(table)
+				if ip == "" {
+					fmt.Println("can't find the ip which table in")
+					break
+				}
 			}
 			// call Region.Process rpc with ip var
-			// hit := false
-			// regionProcessCall := client.rpcMaster.Go("Region.Process", ip, &hit, nil)
-			// RPreplyCall := <- regionProcessCall.Done
-
-			hit := false // mock rpc response, false if ip is stale
-			if !hit {
-				ip = client.updateCache(table)
-				// call Region.Process rpc again
-				// regionProcessCall = client.rpcMaster.Go("Region.Process", ip, &hit, nil)
-				// RPreplyCall = <- regionProcessCall.Done
+			result := ""
+			// obtain regionRPC
+			rpcRegion, ok := client.rpcRegionMap[ip]
+			if !ok {
+				fmt.Printf("region not in cache, add it to map")
+				rpcRegion, err = rpc.DialHTTP("tcp", ip)
+				if err != nil {
+					fmt.Println("fail to connect to region: " + ip)
+					fmt.Println("IP is new but cann't connect")
+					delete(client.ipCache, table)
+					break
+				} else {
+					client.rpcRegionMap[ip] = rpcRegion
+				}
 			}
+
+			call, err := TimeoutRPC(rpcRegion.Go("Region.Process", ip, &result, nil), common.TIMEOUT)
+			if err != nil {
+				fmt.Println("[region process]timeout")
+			}
+			if call.Error != nil {
+				//TODO: 这里的error有可能是sql错误导致或者ip旧了rpcRegion拿不到导致，先放一放
+				fmt.Println("can't obtain result, maybe old ip or sql error")
+
+				// ip, rpcRegion is old，select for twice
+				// first delete old cache
+				delete(client.ipCache, table)
+				delete(client.rpcRegionMap, ip)
+				new_ip := client.updateCache(table) // obtain newest ip
+				if new_ip == "" {
+					fmt.Println("can't find the ip which table in")
+					break
+				}
+				// obtain newest rpcRegion and update map
+				new_rpcRegion, err := rpc.DialHTTP("tcp", new_ip)
+				if err != nil {
+					fmt.Printf("[client]fail to connect to region: " + ip)
+					delete(client.ipCache, table)
+					break
+				}
+				// call Region.Process rpc again
+				call, err := TimeoutRPC(new_rpcRegion.Go("Region.Process", ip, &result, nil), TIMEOUT)
+				if err != nil {
+					fmt.Println("[no cache and region process]timeout")
+					break
+				}
+				if call.Error != nil {
+					fmt.Println("can't obatin result, maybe input is error")
+					break
+				}
+				fmt.Println("result: " + result)
+				client.ipCache[table] = new_ip
+				client.rpcRegionMap[new_ip] = new_rpcRegion
+			}
+			fmt.Println("result: " + result)
 		}
 	}
 }
@@ -142,11 +209,19 @@ func (client *Client) preprocessInput(input string) (table string, op TableOp, e
 	return table, op, err
 }
 
+//这里目前还没有考虑没有查到ip的情况
 func (client *Client) updateCache(table string) string {
 	ip := ""
 	// call Master.TableIP rpc
-	client.rpcMaster.Call("Master.TableIP", table, &ip)
-	// tableIPCall := client.rpcMaster.Go("Master.TableIP", table, &ip, nil)
-	// replyCall := <-tableIPCall.Done
+	call, err := TimeoutRPC(client.rpcMaster.Go("Master.TableIP", table, &ip, nil), TIMEOUT)
+	if err != nil {
+		fmt.Println("[update cache]timeout")
+		return ip
+	}
+	if call.Error != nil {
+		fmt.Println("[table invalid]update cache failed")
+		return ip
+	}
+	client.ipCache[table] = ip
 	return ip
 }

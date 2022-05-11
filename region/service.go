@@ -1,6 +1,6 @@
 package region
 
-func (region *Region) Process(input string, res *bool) error {
+func (region *Region) Process(input string, res *string) error {
 	return nil
 }
 

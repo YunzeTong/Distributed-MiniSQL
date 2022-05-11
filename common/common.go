@@ -66,10 +66,10 @@ func DeleteLocalFile(fileName string) {
 }
 
 // rpc util
-func TimeoutRPC(call *rpc.Call, ms int) (interface{}, error) {
+func TimeoutRPC(call *rpc.Call, ms int) (*rpc.Call, error) {
 	select {
 	case res := <-call.Done:
-		return res.Reply, nil
+		return res, nil
 	case <-time.After(time.Duration(ms) * time.Millisecond):
 		return nil, errors.New("timeout")
 	}
