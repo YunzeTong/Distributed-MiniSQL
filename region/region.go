@@ -17,10 +17,13 @@ type Region struct {
 	etcdClient   *clientv3.Client
 	masterClient *rpc.Client
 	dbBridge     Bridge
+
+	mockTables []string
 }
 
 func (region *Region) Init() {
 	region.dbBridge.Construct()
+	region.mockTables = make([]string, 0)
 }
 
 func (region *Region) Run() {
