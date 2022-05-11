@@ -1,6 +1,7 @@
 package region
 
 import (
+	"log"
 	"strings"
 
 	. "Distributed-MiniSQL/common"
@@ -11,11 +12,13 @@ type Bridge struct {
 	ftpClient   FtpUtils
 	interpreter Interpreter
 	api         API
+	mockTables  []string
 }
 
 func (bridge *Bridge) Construct() {
 	bridge.api.Init()
 	bridge.ftpClient.Construct() // TODO: we might not need this
+	bridge.mockTables = make([]string, 0)
 }
 
 // I know it looks dirty, just avoid premature optimization
@@ -28,9 +31,15 @@ func (bridge *Bridge) ProcessSQL(sql string) string {
 
 	switch resInfo[0] {
 	case "-->Create":
-		bridge.sendToFTP(resInfo[2])
+		// bridge.sendToFTP(resInfo[2])
+		log.Println("start to add table " + resInfo[2])
+		AddUniqueToSlice(&bridge.mockTables, resInfo[2])
+		log.Println("finish add table " + resInfo[2])
 	case "-->Drop":
-		bridge.deleteFromFTP(resInfo[2])
+		// bridge.deleteFromFTP(resInfo[2])
+		log.Println("start to drop table " + resInfo[2])
+		DeleteFromSlice(&bridge.mockTables, resInfo[2])
+		log.Println("finish drop table " + resInfo[2])
 	case "-->Insert":
 		bridge.deleteFromFTP(sqlInfo[2])
 		bridge.sendToFTP(sqlInfo[2])
