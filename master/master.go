@@ -1,6 +1,7 @@
 package master
 
 import (
+	"math"
 	"net"
 	"net/http"
 	"net/rpc"
@@ -46,23 +47,31 @@ func (master *Master) Run() {
 	go http.Serve(l, nil)
 }
 
-// func (master *Master) serveRegion(opt int, msg, ip string) string {
-// 	res := ""
-// 	info := strings.Split(msg, SEP)
-// 	switch opt {
-// 	case 1:
-// 		// TODO: shouldn't this be done with zk/etcd?
-// 		if !master.serverExists(ip) {
-// 			master.addServer(ip, info)
-// 		}
-// 	case 2:
-// 		switch info[1] {
-// 		case "delete":
-// 			master.deleteTable(info[0], ip)
-// 		case "add":
-// 			master.addTable(info[0], ip)
-// 		}
-// 		return res
-// 	}
-// 	return ""
-// }
+func (master *Master) addTable(table, ip string) {
+	master.tableIP[table] = ip
+	AddUniqueToSlice(master.serverTables[ip], table)
+}
+
+func (master *Master) deleteTable(table, ip string) {
+	delete(master.tableIP, table)
+	DeleteFromSlice(master.serverTables[ip], table)
+}
+
+func (master *Master) bestServer(excluded string) string {
+	min, res := math.MaxInt, ""
+	for ip, pTables := range master.serverTables {
+		if ip != excluded && len(*pTables) < min {
+			min, res = len(*pTables), ip
+		}
+	}
+	return res
+}
+
+func (master *Master) transferServerTables(src, dst string) {
+	pTables := master.serverTables[src]
+	for _, tab := range *pTables {
+		master.tableIP[tab] = dst
+		master.addTable(tab, dst)
+	}
+	delete(master.serverTables, src)
+}

@@ -1,6 +1,8 @@
 package region
 
 import (
+	"strings"
+
 	. "Distributed-MiniSQL/common"
 	. "Distributed-MiniSQL/minisql"
 )
@@ -17,30 +19,28 @@ func (bridge *Bridge) Construct() {
 }
 
 // I know it looks dirty, just avoid premature optimization
-// func (bridge *Bridge) ProcessSQL(sql string) (string, string) {
-// 	res, masterRes := bridge.interpreter.Interpret(sql), ""
-// 	bridge.api.Store()
-// 	bridge.sendTCToFTP()
+func (bridge *Bridge) ProcessSQL(sql string) string {
+	res := bridge.interpreter.Interpret(sql)
+	bridge.api.Store()
+	bridge.sendTCToFTP()
 
-// 	sqlInfo, resInfo := strings.Split(sql, SEP), strings.Split(res, SEP)
+	sqlInfo, resInfo := strings.Split(sql, " "), strings.Split(res, " ")
 
-// 	switch resInfo[0] {
-// 	case "-->Create":
-// 		bridge.sendToFTP(resInfo[2])
-// 		masterRes = WrapMessage(PREFIX_REGION, 2, strings.Join([]string{resInfo[2], "add"}, SEP))
-// 	case "-->Drop":
-// 		bridge.deleteFromFTP(resInfo[2])
-// 		masterRes = WrapMessage(PREFIX_REGION, 2, strings.Join([]string{resInfo[2], "delete"}, SEP))
-// 	case "-->Insert":
-// 		bridge.deleteFromFTP(sqlInfo[2])
-// 		bridge.sendToFTP(sqlInfo[2])
-// 	case "-->Delete":
-// 		bridge.deleteFromFTP(sqlInfo[2])
-// 		bridge.sendToFTP(sqlInfo[2])
-// 	default:
-// 	}
-// 	return res, masterRes
-// }
+	switch resInfo[0] {
+	case "-->Create":
+		bridge.sendToFTP(resInfo[2])
+	case "-->Drop":
+		bridge.deleteFromFTP(resInfo[2])
+	case "-->Insert":
+		bridge.deleteFromFTP(sqlInfo[2])
+		bridge.sendToFTP(sqlInfo[2])
+	case "-->Delete":
+		bridge.deleteFromFTP(sqlInfo[2])
+		bridge.sendToFTP(sqlInfo[2])
+	default:
+	}
+	return res
+}
 
 // again, avoid premature optimization
 func (bridge *Bridge) sendToFTP(info string) {

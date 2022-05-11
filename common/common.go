@@ -3,6 +3,7 @@ package common
 import (
 	"errors"
 	"net/rpc"
+	"strings"
 	"time"
 )
 
@@ -28,6 +29,11 @@ const (
 type CreateTableArgs struct {
 	Table string
 	Sql   string
+}
+
+type DownloadBackupArgs struct {
+	Ip     string
+	Tables []string
 }
 
 func AddUniqueToSlice(pSlice *[]string, str string) {
@@ -73,4 +79,13 @@ func TimeoutRPC(call *rpc.Call, ms int) (*rpc.Call, error) {
 	case <-time.After(time.Duration(ms) * time.Millisecond):
 		return nil, errors.New("timeout")
 	}
+}
+
+// sql util
+func DropTableSQL(table string) string {
+	var builder strings.Builder
+	builder.WriteString("drop table ")
+	builder.WriteString(table)
+	builder.WriteByte(';')
+	return builder.String()
 }

@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/jlaffaye/ftp"
+
+	. "Distributed-MiniSQL/common"
 )
 
 type FtpUtils struct {
@@ -19,11 +21,10 @@ type FtpUtils struct {
 }
 
 func (fu *FtpUtils) Construct() {
-	fu.hostIP = "255.255.255.255"
+	fu.hostIP = MASTER_IP
 	fu.port = "21"
 	fu.username = "tyz"
 	fu.password = "tyz"
-
 }
 
 // TODO:

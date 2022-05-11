@@ -16,6 +16,7 @@ func (master *Master) watch() {
 
 	for watchRes := range watchChan {
 		for _, event := range watchRes.Events {
+			// TODO: add mutex?
 			log.Printf("%s %q %q\n", event.Type, event.Kv.Key, event.Kv.Value)
 			ip := string(event.Kv.Value)
 			switch event.Type {
@@ -26,40 +27,31 @@ func (master *Master) watch() {
 					master.regionClients[ip] = client
 				}
 
+				var dummyArgs, dummyReply bool
+				// assume that region would not go down soon after it's up
+				_, _ = TimeoutRPC(client.Go("Region.RestoreDatabase", &dummyArgs, &dummyReply, nil), TIMEOUT)
+
 				pStaleTables, ok := master.serverTables[ip]
 				if ok {
 					for _, table := range *pStaleTables {
 						master.deleteTable(table, ip)
 					}
+				} else {
+					temp := make([]string, 0)
+					master.serverTables[ip] = &temp
 				}
-
-				var reply bool
-				res, err := TimeoutRPC(client.Go("Region.RestoreDatabase", false, &reply, nil), TIMEOUT)
-				if err != nil {
-					log.Println("timeout")
-				}
-				// if master.serverExists(ip) {
-				// 	temp := make([]string, 0)
-				// 	master.serverTables[ip] = &temp
-				// 	// TODO: following code in this if-block might be faulty
-				// 	conn := master.conns[ip]
-				// 	conn.Write([]byte(WrapMessage(PREFIX_MASTER, 4, "recover")))
-				// }
 			case mvccpb.DELETE:
-				// if master.serverExists(ip) {
-				// 	var builder strings.Builder
-				// 	pTables := master.serverTables[ip]
-
-				// 	builder.WriteString(ip)
-				// 	builder.WriteByte('#')
-				// 	builder.WriteString(strings.Join(*pTables, "@"))
-
-				// 	bestServer := master.bestServer(ip)
-				// 	master.transferServerTables(ip, bestServer) // TODO: action might not done, use rpc instead
-
-				// 	conn := master.conns[bestServer]
-				// 	conn.Write([]byte(WrapMessage(PREFIX_MASTER, 3, builder.String())))
-				// }
+				tables := *master.serverTables[ip]
+				if len(tables) == 0 {
+					continue
+				}
+				bestServer := master.bestServer(ip)
+				client := master.regionClients[bestServer]
+				args, dummy := DownloadBackupArgs{Ip: ip, Tables: tables}, false
+				// assume that other regions would not go down shortly after one did
+				_, _ = TimeoutRPC(client.Go("Region.DownloadBackup", &args, &dummy, nil), TIMEOUT)
+				// assume no error
+				master.transferServerTables(ip, bestServer)
 			}
 		}
 	}
