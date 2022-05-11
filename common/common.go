@@ -1,21 +1,15 @@
 package common
 
-import "strings"
+import (
+	"errors"
+	"net/rpc"
+	"time"
+)
 
 type Identity int
 
 const (
-	PREFIX_CLIENT = "<client>"
-	PREFIX_MASTER = "<master>"
-	PREFIX_REGION = "<region>"
-	PREFIX_RESULT = "<result>"
-
-	CLIENT Identity = 0
-	MASTER Identity = 1
-	REGION Identity = 2
-	NULL   Identity = 3
-
-	SEP = " "
+	TIMEOUT = 1000
 
 	// networking
 	// https://pkg.go.dev/net#Listen
@@ -34,25 +28,6 @@ const (
 type CreateTableArgs struct {
 	Table string
 	Sql   string
-}
-
-func ParseMessage(msg string) (Identity, int, string) {
-	// TODO
-	return MASTER, 0, "" // place holder
-}
-
-func WrapMessage(prefix string, opt int, msg string) string {
-	var builder strings.Builder
-
-	builder.WriteString(prefix)
-	if opt != -1 {
-		builder.WriteByte('[')
-		builder.WriteByte('0' + byte(opt))
-		builder.WriteByte(']')
-	}
-	builder.WriteString(msg)
-
-	return builder.String()
 }
 
 func AddUniqueToSlice(pSlice *[]string, str string) {
@@ -88,4 +63,14 @@ func GetHostIP() string {
 
 func DeleteLocalFile(fileName string) {
 	// TODO
+}
+
+// rpc util
+func TimeoutRPC(call *rpc.Call, ms int) (interface{}, error) {
+	select {
+	case res := <-call.Done:
+		return res.Reply, nil
+	case <-time.After(time.Duration(ms) * time.Millisecond):
+		return nil, errors.New("timeout")
+	}
 }

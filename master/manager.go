@@ -6,28 +6,28 @@ import (
 	. "Distributed-MiniSQL/common"
 )
 
-func (master *Master) serverExists(ip string) bool {
-	_, ok := master.servers[ip]
-	return ok
-}
+// func (master *Master) serverExists(ip string) bool {
+// 	_, ok := master.servers[ip]
+// 	return ok
+// }
 
-func (master *Master) addServer(ip string, tables []string) {
-	master.servers[ip] = true
-	temp := make([]string, 0)
-	master.serverTables[ip] = &temp
-	for _, table := range tables {
-		master.addTable(ip, table)
-	}
-}
+// func (master *Master) addServer(ip string, tables []string) {
+// 	master.servers[ip] = true
+// 	temp := make([]string, 0)
+// 	master.serverTables[ip] = &temp
+// 	for _, table := range tables {
+// 		master.addTable(ip, table)
+// 	}
+// }
 
 func (master *Master) addTable(table, ip string) {
 	// guaranteed that addServer(ip) is called
-	master.tableLoc[table] = ip
+	master.tableIP[table] = ip
 	AddUniqueToSlice(master.serverTables[ip], table)
 }
 
 func (master *Master) deleteTable(table, ip string) {
-	delete(master.tableLoc, table)
+	delete(master.tableIP, table)
 	DeleteFromSlice(master.serverTables[ip], table)
 }
 
@@ -41,14 +41,14 @@ func (master *Master) bestServer(excluded string) string {
 	return res
 }
 
-func (master *Master) tableLocation(table string) string {
-	return master.tableLoc[table]
+func (master *Master) tableIPation(table string) string {
+	return master.tableIP[table]
 }
 
 func (master *Master) transferServerTables(src, dst string) {
 	pTables := master.serverTables[src]
 	for _, tab := range *pTables {
-		master.tableLoc[tab] = dst
+		master.tableIP[tab] = dst
 		master.addTable(tab, dst)
 	}
 
