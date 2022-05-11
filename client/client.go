@@ -1,7 +1,7 @@
 package client
 
 import (
-	"Distributed-MiniSQL/common"
+	// "Distributed-MiniSQL/common"
 	. "Distributed-MiniSQL/common"
 	"errors"
 	"fmt"
@@ -24,7 +24,7 @@ const (
 )
 
 func (client *Client) Init() {
-	rpcMas, err := rpc.DialHTTP("tcp", common.MASTER_ADDR)
+	rpcMas, err := rpc.DialHTTP("tcp", MASTER_ADDR)
 	if err != nil {
 		fmt.Printf("[client]connect error: %v", err)
 	}
@@ -65,7 +65,7 @@ func (client *Client) Run() {
 		switch op {
 		case CREATE:
 			// call Master.CreateTable rpc
-			var args common.CreateTableArgs
+			var args CreateTableArgs
 			args.Table = table
 			args.Sql = input
 			ip := ""
@@ -120,7 +120,7 @@ func (client *Client) Run() {
 				}
 			}
 
-			call, err := TimeoutRPC(rpcRegion.Go("Region.Process", ip, &result, nil), common.TIMEOUT)
+			call, err := TimeoutRPC(rpcRegion.Go("Region.Process", ip, &result, nil), TIMEOUT)
 			if err != nil {
 				fmt.Println("[region process]timeout")
 			}
@@ -204,7 +204,7 @@ func (client *Client) preprocessInput(input string) (table string, op TableOp, e
 
 	// 只要table仍为""，说明没拿到表名
 	if table == "" {
-		err = errors.New("No table name in input")
+		err = errors.New("no table name in input")
 	}
 	return table, op, err
 }
