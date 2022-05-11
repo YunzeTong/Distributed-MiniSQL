@@ -1,6 +1,7 @@
 package master
 
 import (
+	"log"
 	"math"
 	"net"
 	"net/http"
@@ -34,10 +35,16 @@ func (master *Master) Init() {
 
 func (master *Master) Run() {
 	// connect to local etcd server
-	master.etcdClient, _ = clientv3.New(clientv3.Config{
+	var err error
+	master.etcdClient, err = clientv3.New(clientv3.Config{
 		Endpoints:   []string{"http://" + HOST_ADDR},
-		DialTimeout: 5 * time.Second,
+		DialTimeout: 1 * time.Second,
 	})
+	if err != nil {
+		log.Println(err)
+	} else {
+		log.Println("etcd success")
+	}
 	defer master.etcdClient.Close()
 	go master.watch()
 
@@ -45,6 +52,12 @@ func (master *Master) Run() {
 	rpc.HandleHTTP()
 	l, _ := net.Listen("tcp", MASTER_PORT)
 	go http.Serve(l, nil)
+
+	log.Println("rpc register")
+
+	for {
+		time.Sleep(10 * time.Second)
+	}
 }
 
 func (master *Master) addTable(table, ip string) {

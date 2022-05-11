@@ -69,7 +69,7 @@ func (client *Client) Run() {
 			args.Table = table
 			args.Sql = input
 			ip := ""
-			call, err := TimeoutRPC(client.rpcMaster.Go("Master.CreateTable", args, &ip, nil), TIMEOUT)
+			call, err := TimeoutRPC(client.rpcMaster.Go("Master.CreateTable", &args, &ip, nil), TIMEOUT)
 			if err != nil {
 				fmt.Println("timeout")
 			}
@@ -81,7 +81,7 @@ func (client *Client) Run() {
 		case DROP:
 			// call Master.DropTable rpc
 			res := false
-			call, err := TimeoutRPC(client.rpcMaster.Go("Master.DropTable", table, &res, nil), TIMEOUT)
+			call, err := TimeoutRPC(client.rpcMaster.Go("Master.DropTable", &table, &res, nil), TIMEOUT)
 			if err != nil {
 				fmt.Println("timeout")
 			}
@@ -120,7 +120,7 @@ func (client *Client) Run() {
 				}
 			}
 
-			call, err := TimeoutRPC(rpcRegion.Go("Region.Process", ip, &result, nil), TIMEOUT)
+			call, err := TimeoutRPC(rpcRegion.Go("Region.Process", &ip, &result, nil), TIMEOUT)
 			if err != nil {
 				fmt.Println("[region process]timeout")
 			}
@@ -145,7 +145,7 @@ func (client *Client) Run() {
 					break
 				}
 				// call Region.Process rpc again
-				call, err := TimeoutRPC(new_rpcRegion.Go("Region.Process", ip, &result, nil), TIMEOUT)
+				call, err := TimeoutRPC(new_rpcRegion.Go("Region.Process", &ip, &result, nil), TIMEOUT)
 				if err != nil {
 					fmt.Println("[no cache and region process]timeout")
 					break
@@ -213,7 +213,7 @@ func (client *Client) preprocessInput(input string) (table string, op TableOp, e
 func (client *Client) updateCache(table string) string {
 	ip := ""
 	// call Master.TableIP rpc
-	call, err := TimeoutRPC(client.rpcMaster.Go("Master.TableIP", table, &ip, nil), TIMEOUT)
+	call, err := TimeoutRPC(client.rpcMaster.Go("Master.TableIP", &table, &ip, nil), TIMEOUT)
 	if err != nil {
 		fmt.Println("[update cache]timeout")
 		return ip

@@ -16,7 +16,7 @@ const (
 	// https://pkg.go.dev/net#Listen
 	NETWORK = "tcp"
 
-	MASTER_IP   = "127.0.0.1" // pending
+	MASTER_IP   = "172.18.0.2"
 	MASTER_PORT = ":4733"
 	MASTER_ADDR = MASTER_IP + MASTER_PORT
 
@@ -87,5 +87,20 @@ func DropTableSQL(table string) string {
 	builder.WriteString("drop table ")
 	builder.WriteString(table)
 	builder.WriteByte(';')
+	return builder.String()
+}
+
+// debug
+func MockDropTableSQL(table string) string {
+	var builder strings.Builder
+	builder.WriteString("-->Drop dummy ")
+	builder.WriteString(table)
+	return builder.String()
+}
+
+func MockCreateTableSQL(table string) string {
+	var builder strings.Builder
+	builder.WriteString("-->Create dummy ")
+	builder.WriteString(table)
 	return builder.String()
 }
