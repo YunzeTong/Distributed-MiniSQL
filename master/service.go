@@ -1,6 +1,8 @@
 package master
 
-func (master *Master) CreateTable(table string, ip *string) error {
+import "Distributed-MiniSQL/common"
+
+func (master *Master) CreateTable(args common.CreateTableArgs, ip *string) error {
 	return nil
 }
 

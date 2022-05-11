@@ -31,6 +31,11 @@ const (
 	HOST_ADDR = "127.0.0.1:2379"
 )
 
+type CreateTableArgs struct {
+	Table string
+	Sql   string
+}
+
 func ParseMessage(msg string) (Identity, int, string) {
 	// TODO
 	return MASTER, 0, "" // place holder
