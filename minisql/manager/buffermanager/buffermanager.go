@@ -80,7 +80,7 @@ func (b *Block) WriteFloat(offset int, value float32) bool {
 func (b *Block) ReadString(offset int, length int) string {
 	var buf []byte = make([]byte, length)
 	for i := 0; i < length && (i < BLOCKSIZE-offset); i++ {
-		buf[i] = b.BlockData[offset+1]
+		buf[i] = b.BlockData[offset+i]
 	}
 	b.LRUCount++
 	return string(buf)
@@ -227,7 +227,7 @@ func ReadBlockFromDisk1(filename string, ofs int, bid int) bool {
 }
 
 func WriteBlockToDisk(bid int) bool {
-	if buffer[bid].IsDirty {
+	if !buffer[bid].IsDirty {
 		buffer[bid].IsValid = false
 		return true
 	}

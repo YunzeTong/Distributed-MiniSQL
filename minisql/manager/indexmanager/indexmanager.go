@@ -9,7 +9,7 @@ import (
 	buffermanager "Distributed-MiniSQL/minisql/manager/buffermanager"
 	catalogmanager "Distributed-MiniSQL/minisql/manager/catalogmanager"
 	index "Distributed-MiniSQL/minisql/manager/commonutil"
-	recordmanager "Distributed-MiniSQL/minisql/manager/recordmanager"
+	condition "Distributed-MiniSQL/minisql/manager/commonutil2"
 )
 
 //TreeMap保存已建立的B+树的信息
@@ -107,18 +107,18 @@ func BuildIndex(idx index.Index) {
 }
 
 //需要抛出错误
-func Select(idx index.Index, cond recordmanager.Condition) []catalogmanager.Address {
+func Select(idx index.Index, cond condition.Condition) []catalogmanager.Address {
 	tree := TreeMap[idx.IndexName]
 	indexNum := catalogmanager.GetAttributeIndex(idx.TableName, idx.AttributeName)
 	Datatype := catalogmanager.GetType(idx.TableName, indexNum) //类型
-	operator := cond.GetOperator()
+	operator := cond.Operator
 	var value interface{}
 	if Datatype == 1 { //char
-		value = cond.GetValue()
+		value = cond.Value
 	} else if Datatype == 2 { //int
-		value, _ = strconv.Atoi(cond.GetValue())
+		value, _ = strconv.Atoi(cond.Value)
 	} else if Datatype == 3 { //float
-		value, _ = strconv.ParseFloat(cond.GetValue(), 64)
+		value, _ = strconv.ParseFloat(cond.Value, 64)
 	}
 	if operator == "=" {
 		return []catalogmanager.Address{*tree.FindEq(value)}
@@ -193,9 +193,9 @@ func GetStoreLength(tableName string) int {
 	}
 }
 
-func GetTuple(tableName string, block buffermanager.Block, offset int) recordmanager.TableRow {
+func GetTuple(tableName string, block buffermanager.Block, offset int) condition.TableRow {
 	attributeNum := catalogmanager.GetAttributeNum(tableName)
-	result := recordmanager.NewTableRow([]string{})
+	result := condition.NewTableRow([]string{})
 	var attributeValue string
 
 	offset++ //跳过第一个标志位
