@@ -13,13 +13,9 @@ const (
 	TIMEOUT = 1000
 
 	// networking
-	// https://pkg.go.dev/net#Listen
 	NETWORK = "tcp"
 
-	MASTER_IP   = "172.18.0.2"
 	MASTER_PORT = ":4733"
-	MASTER_ADDR = MASTER_IP + MASTER_PORT
-
 	REGION_PORT = ":2016"
 
 	// etcd

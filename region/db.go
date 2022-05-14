@@ -15,9 +15,9 @@ type Bridge struct {
 	mockTables  []string
 }
 
-func (bridge *Bridge) Construct() {
+func (bridge *Bridge) Construct(serverIp string) {
 	bridge.api.Init()
-	bridge.ftpClient.Construct() // TODO: we might not need this
+	bridge.ftpClient.Construct(serverIp) // TODO: we might not need this
 	bridge.mockTables = make([]string, 0)
 }
 
@@ -55,8 +55,8 @@ func (bridge *Bridge) ProcessSQL(sql string) string {
 
 // again, avoid premature optimization
 func (bridge *Bridge) sendToFTP(info string) {
-	bridge.ftpClient.StoreFile(info, "table", "")
-	bridge.ftpClient.StoreFile(info+"_index.index", "index", "")
+	bridge.ftpClient.UploadFile(info, "table", "")
+	bridge.ftpClient.UploadFile(info+"_index.index", "index", "")
 }
 
 func (bridge *Bridge) deleteFromFTP(info string) {
@@ -65,8 +65,8 @@ func (bridge *Bridge) deleteFromFTP(info string) {
 }
 
 func (bridge *Bridge) sendTCToFTP() {
-	bridge.ftpClient.StoreFile("table_catalog", "catalog", GetHostIP())
-	bridge.ftpClient.StoreFile("index_catalog", "catalog", GetHostIP())
+	bridge.ftpClient.UploadFile("table_catalog", "catalog", GetHostIP())
+	bridge.ftpClient.UploadFile("index_catalog", "catalog", GetHostIP())
 }
 
 func (bridge *Bridge) GetTables() []string {

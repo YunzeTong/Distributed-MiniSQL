@@ -25,8 +25,9 @@ const (
 	OTHERS = 2
 )
 
-func (client *Client) Init() {
-	rpcMas, err := rpc.DialHTTP("tcp", MASTER_ADDR)
+func (client *Client) Init(masterIp string) {
+	masterAddr := masterIp + MASTER_PORT
+	rpcMas, err := rpc.DialHTTP("tcp", masterAddr)
 	if err != nil {
 		fmt.Printf("[client]connect error: %v", err)
 	}
