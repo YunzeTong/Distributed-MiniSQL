@@ -116,11 +116,12 @@ func (fu *FtpUtils) DownloadFile(ftpPath string, fileName string, savePath strin
 func (fu *FtpUtils) UploadFile(fileName string, savePath string, IP string) bool {
 	fu.Login()
 
-	//切换到home
-	err := fu.ftpClient.ChangeDir("/home/tyz")
+	cur, err := fu.ftpClient.CurrentDir()
 	if err != nil {
 		fmt.Printf("[from ftputils]change dir failed: %v\n", err)
 		return false
+	} else {
+		fmt.Printf("%v\n", cur)
 	}
 
 	//根据savepath建立文件夹
