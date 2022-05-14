@@ -19,22 +19,22 @@ const (
 
 type Region struct {
 	etcdClient   *clientv3.Client
+	masterIp     string
 	masterClient *rpc.Client
 	dbBridge     Bridge
 
 	mockTables []string
 
 	// mock
-	name string
-	ip   string
+	ip string
 }
 
-func (region *Region) Init(name, ip string) {
-	region.dbBridge.Construct()
+func (region *Region) Init(ip, masterIp string) {
+	region.dbBridge.Construct(masterIp)
 	region.mockTables = make([]string, 0)
 
 	// mock
-	region.name = name
+	region.masterIp = masterIp
 	region.ip = ip
 }
 
@@ -62,9 +62,9 @@ func (region *Region) Run() {
 	log.Println("rpc register")
 
 	// connect to master
-	region.masterClient, err = rpc.DialHTTP("tcp", MASTER_ADDR)
+	region.masterClient, err = rpc.DialHTTP("tcp", region.masterIp+MASTER_PORT)
 	if err != nil {
-		log.Printf("rpc.DialHTTP err: %v", MASTER_ADDR)
+		log.Printf("rpc.DialHTTP err: %v", region.masterIp+MASTER_PORT)
 	}
 
 	for {
@@ -75,10 +75,9 @@ func (region *Region) Run() {
 // https://pkg.go.dev/go.etcd.io/etcd@v3.3.27+incompatible/clientv3#Lease
 func (region *Region) stayOnline() {
 	time.Sleep(time.Second * BUFF)
-	ip, _ := region.getConfig()
 
 	for {
-		log.Printf("%v stayOnline iter", ip)
+		log.Printf("%v stayOnline iter", region.ip)
 		resp, err := region.etcdClient.Grant(context.Background(), 5)
 		if err != nil {
 			log.Println("etcd grant error")
@@ -87,7 +86,7 @@ func (region *Region) stayOnline() {
 			log.Println("etcd grant finish")
 		}
 
-		_, err = region.etcdClient.Put(context.Background(), ip, "", clientv3.WithLease(resp.ID))
+		_, err = region.etcdClient.Put(context.Background(), region.ip, "", clientv3.WithLease(resp.ID))
 		if err != nil {
 			log.Println("etcd put error")
 			continue
@@ -110,9 +109,9 @@ func (region *Region) stayOnline() {
 	}
 }
 
-func (region *Region) getConfig() (string, string) {
+func (region *Region) getConfig() string {
 	// TODO
 	// ip, name := "", ""
 	// return ip, name
-	return region.ip, region.name
+	return region.ip
 }

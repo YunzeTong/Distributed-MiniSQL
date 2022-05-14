@@ -8,8 +8,6 @@ import (
 	"time"
 
 	"github.com/jlaffaye/ftp"
-
-	. "Distributed-MiniSQL/common"
 )
 
 type FtpUtils struct {
@@ -20,8 +18,8 @@ type FtpUtils struct {
 	ftpClient *ftp.ServerConn
 }
 
-func (fu *FtpUtils) Construct() {
-	fu.hostIP = MASTER_IP
+func (fu *FtpUtils) Construct(masterIp string) {
+	fu.hostIP = masterIp
 	fu.port = "21"
 	fu.username = "tyz"
 	fu.password = "tyz"
@@ -113,9 +111,9 @@ func (fu *FtpUtils) DownloadFile(ftpPath string, fileName string, savePath strin
 //风神翼龙：重载二合一
 // IP为""则执行两个参数的，否则执行三个参数的，唯一区别为带IP的更改了fileName
 // fileName: 要上传的文件名
-// savePath: 文件存在的文件夹路径
+// savePath: ftp上文件存在的文件夹路径
 // IP: ...不知道是啥
-func (fu *FtpUtils) StoreFile(fileName string, savePath string, IP string) bool {
+func (fu *FtpUtils) UploadFile(fileName string, savePath string, IP string) bool {
 	fu.Login()
 	//根据savepath建立文件夹
 	err := fu.ftpClient.MakeDir(savePath)
