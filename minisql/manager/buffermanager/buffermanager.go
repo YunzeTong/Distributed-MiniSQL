@@ -110,6 +110,12 @@ var MAXBLOCKNUM int = 50
 var EOF int = -1
 var buffer []Block = make([]Block, MAXBLOCKNUM)
 
+func BufferInit() {
+	for i := 0; i < MAXBLOCKNUM; i++ {
+		buffer[i] = *NewBlock()
+	}
+}
+
 func TestInterFace() {
 	b := NewBlock()
 	b.WriteInteger(1200, 2245)
@@ -165,26 +171,25 @@ func ReadBlockFromDiskQuote(filename string, ofs int) *Block {
 		if buffer[i].IsValid && buffer[i].FileName == filename && buffer[i].BlockOffset == ofs {
 			break
 		}
-		if i < MAXBLOCKNUM {
-			return &buffer[i]
-		} else {
-			bid := GetFreeBlockId()
-			if bid == EOF {
-				return nil
-			}
-			f, err := os.OpenFile(filename, os.O_CREATE|os.O_RDWR, 0666)
-			if err != nil {
-				fmt.Print(err)
-				return nil
-			}
-			if !ReadBlockFromDisk1(filename, ofs, bid) {
-				return nil
-			}
-			defer f.Close()
-			return &buffer[i]
-		}
 	}
-	return &buffer[i]
+	if i < MAXBLOCKNUM {
+		return &buffer[i]
+	} else {
+		bid := GetFreeBlockId()
+		if bid == EOF {
+			return nil
+		}
+		f, err := os.OpenFile(filename, os.O_CREATE|os.O_RDWR, 0666)
+		if err != nil {
+			fmt.Print(err)
+			return nil
+		}
+		if !ReadBlockFromDisk1(filename, ofs, bid) {
+			return nil
+		}
+		defer f.Close()
+		return &buffer[bid]
+	}
 }
 
 //三个变量的是disk1，2个变量的是disk
@@ -256,7 +261,7 @@ func GetFreeBlockId() int {
 	index := EOF
 	var mincount int = 0x7FFFFFFF
 	for i := 0; i < MAXBLOCKNUM; i++ {
-		if buffer[i].IsLocked && buffer[i].LRUCount < mincount {
+		if !buffer[i].IsLocked && buffer[i].LRUCount < mincount {
 			index = i
 			mincount = buffer[i].LRUCount
 		}

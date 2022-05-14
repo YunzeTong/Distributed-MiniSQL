@@ -14,10 +14,12 @@ func Initial() {
 	//错误处理机制
 	//var flag bool = true
 	//error 判定？
+
+	buffermanager.BufferInit()
 	catalogmanager.InitTable()
 	catalogmanager.InitIndex()
-	buffermanager.NewBlock()
 	indexmanager.InitIndex()
+
 	//if flag == false {
 	//	panic(qexception.Qexception{1, 500, "Failed to initialize API!"})
 	//}

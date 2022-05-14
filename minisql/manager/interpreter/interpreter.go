@@ -62,7 +62,7 @@ func parseInsert(statement string) string {
 	statement = replaceString(statement, " (", " *\\( *")
 	statement = replaceString(statement, ") ", " *\\) *")
 	statement = strings.Trim(replaceString(statement, ",", " *, *"), "")
-	statement = strings.Trim(replaceString(statement, "", "^insert"), "") //skip insert keyword
+	statement = strings.Trim(replaceString(statement, "", "^insert "), "") //skip insert keyword
 
 	var result strings.Builder
 	var startIndex, endIndex int
@@ -81,13 +81,15 @@ func parseInsert(statement string) string {
 	if endIndex == -1 {
 		panic(qexception.Qexception{0, 904, "Not specify the insert value"})
 	}
-	tableName := statement[startIndex:endIndex] //get table name
+	statement = statement[startIndex:]
+	tableName := statement[0:endIndex] //get table name
 	startIndex = endIndex + 1
-	endIndex = strings.Index(statement[startIndex:], " ") //check values keyword
+	statement = statement[startIndex:]
+	endIndex = strings.Index(statement[0:], " ") //check values keyword
 	if endIndex == -1 {
 		panic(qexception.Qexception{0, 905, "Syntax error: Not specify the insert value"})
 	}
-	if statement[startIndex:endIndex] != "values" {
+	if statement[0:endIndex] != "values" {
 		panic(qexception.Qexception{0, 906, "Must add keyword 'values' after table " + tableName})
 	}
 	startIndex = endIndex + 1
@@ -101,15 +103,16 @@ func parseInsert(statement string) string {
 	var tableRow condition.TableRow
 	for i := 0; i < len(valueParas); i++ {
 		if i == len(valueParas)-1 {
-			valueParas[i] = valueParas[i][0 : len(valueParas[i])-1]
+			valueParas[i] = valueParas[i][0 : len(valueParas[i])-2]
 		}
 		if valueParas[i] == "" {
 			panic(qexception.Qexception{0, 908, "Empty attribute value in insert value"})
 		}
-		var ok1, ok2 bool
-		ok1, _ = regexp.MatchString(valueParas[i], "^\".*\"$")
-		ok2, _ = regexp.MatchString(valueParas[i], "^\\'.*\\'$")
-		if ok1 || ok2 {
+		var ok1 bool
+		ok1 = whetheryinhao(valueParas[i])
+		//ok1, _ = regexp.MatchString(valueParas[i], "^\".*\"$")
+		//ok2, _ = regexp.MatchString(valueParas[i], "^'.*'$")
+		if ok1 {
 			valueParas[i] = valueParas[i][1 : len(valueParas[i])-1]
 		}
 		tableRow.AddAttributeValue(valueParas[i])
@@ -128,7 +131,7 @@ func parseInsert(statement string) string {
 			if catalogmanager.IsIndexKey(tableName, attr.AttributeName) {
 				var idx index.Index
 				idx = catalogmanager.GetIndex(catalogmanager.GetIndexName(tableName, attr.AttributeName))
-				if len(indexmanager.Select(idx, cond)) == 0 {
+				if indexmanager.Select(idx, cond) == nil {
 					continue
 				}
 			} else {
@@ -151,6 +154,16 @@ func parseInsert(statement string) string {
 	fmt.Println("")
 	result.WriteString("-->Insert successfully")
 	return result.String()
+}
+
+func whetheryinhao(str string) bool {
+	var flag bool = false
+	if string(str[0]) == "\"" && string(str[len(str)-1]) == "\"" {
+		flag = true
+	} else if string(str[0]) == "'" && string(str[len(str)-1]) == "'" {
+		flag = true
+	}
+	return flag
 }
 
 func substring(str string, start string, end string) string {
@@ -355,7 +368,7 @@ func bufInterpret(reader *bufio.Reader) string {
 			parseDelete(result)
 			break
 		case "quit":
-			parseQuit(result, *reader)
+			parseQuit(result)
 			break
 		case "execfile":
 			parseSqlFile(result)
@@ -443,6 +456,9 @@ func strInterpret(sql string) string {
 		break
 	case "show":
 		parseShow(result)
+		break
+	case "quit":
+		parseQuit(result)
 		break
 	default:
 		panic(qexception.Qexception{0, 205, "Can't identify " + tokens[0]})
@@ -580,7 +596,7 @@ func parseCreateTable(statement string) string {
 
 			if attrType == "char" { //generate attribute
 				length, _ = strconv.Atoi(attrLength)
-				attribute = *catalogmanager.NewAttribute(attrName, 1, 4, attrUnique)
+				attribute = *catalogmanager.NewAttribute(attrName, 1, length, attrUnique)
 			} else if attrType == "int" {
 				attribute = *catalogmanager.NewAttribute(attrName, 2, 4, attrUnique)
 			} else {
@@ -743,7 +759,7 @@ func parseSelect(statement string) string {
 
 }
 
-func parseQuit(statement string, reader bufio.Reader) {
+func parseQuit(statement string) {
 	var tokens []string
 	tokens = strings.Split(statement, " ")
 	if len(tokens) != 1 {

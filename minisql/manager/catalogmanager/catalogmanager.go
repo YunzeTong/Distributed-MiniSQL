@@ -78,7 +78,7 @@ func InitTable() {
 }
 
 func InitIndex() {
-	file, err := os.Open(TableFileName)
+	file, err := os.Open(IndexFileName)
 	if err != nil {
 		fmt.Println("索引记录文件不存在")
 		return
@@ -142,7 +142,7 @@ func StoreTable() {
 }
 
 func StoreIndex() {
-	file, err := os.OpenFile(TableFileName, os.O_WRONLY|os.O_CREATE, 0666)
+	file, err := os.OpenFile(IndexFileName, os.O_WRONLY|os.O_CREATE, 0666)
 	if err != nil {
 		fmt.Println("打开文件错误")
 		fmt.Println(err)
@@ -271,9 +271,9 @@ func GetIndexName(tableName string, attribute string) string {
 				return value.IndexVector[i].IndexName
 			}
 		}
-		fmt.Printf("The attribute %s doesn't have a index\n", attribute)
+		//fmt.Printf("The attribute %s doesn't have a index\n", attribute)
 	} else {
-		fmt.Printf("The table %s doesn't exist\n", tableName)
+		//fmt.Printf("The table %s doesn't exist\n", tableName)
 	}
 	return ""
 }

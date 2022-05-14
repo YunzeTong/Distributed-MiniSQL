@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
 	buffermanager "Distributed-MiniSQL/minisql/manager/buffermanager"
 	catalogmanager "Distributed-MiniSQL/minisql/manager/catalogmanager"
@@ -96,8 +97,8 @@ func BuildIndex(idx index.Index) {
 		if block.ReadInteger(byteOffset) < 0 {
 			value := catalogmanager.NewAddress(tableName, blockOffset, byteOffset)
 			row := GetTuple(tableName, *block, byteOffset)
-			key := row.GetAttributeValue(IndexNum)
-			//
+			key := row[IndexNum]
+
 			tree.Insert(key, *value)
 			processNum++
 		}
@@ -121,7 +122,11 @@ func Select(idx index.Index, cond condition.Condition) []catalogmanager.Address 
 		value, _ = strconv.ParseFloat(cond.Value, 64)
 	}
 	if operator == "=" {
-		return []catalogmanager.Address{*tree.FindEq(value)}
+		result := tree.FindEq(value)
+		if result == nil {
+			return nil
+		}
+		return []catalogmanager.Address{*result}
 	} else if operator == "<>" {
 		return tree.FindNeq(value)
 	} else if operator == ">" {
@@ -193,10 +198,10 @@ func GetStoreLength(tableName string) int {
 	}
 }
 
-func GetTuple(tableName string, block buffermanager.Block, offset int) condition.TableRow {
+func GetTuple(tableName string, block buffermanager.Block, offset int) []interface{} {
 	attributeNum := catalogmanager.GetAttributeNum(tableName)
-	result := condition.NewTableRow([]string{})
-	var attributeValue string
+	var attributeValue interface{}
+	var result []interface{}
 
 	offset++ //跳过第一个标志位
 	for i := 0; i < attributeNum; i++ {
@@ -204,18 +209,48 @@ func GetTuple(tableName string, block buffermanager.Block, offset int) condition
 		datatype := catalogmanager.GetType(tableName, i)
 		if datatype == 1 { //char
 			attributeValue = block.ReadString(offset, length)
-			first := int(attributeValue[0]) //存疑
+			first := strings.Index(attributeValue.(string), string([]byte{0x00})) //存疑
 			if first == -1 {
-				first = len(attributeValue)
+				first = len(attributeValue.(string))
 			}
-			attributeValue = attributeValue[0:first] //存疑
+			attributeValue = attributeValue.(string)[0:first] //存疑
 		} else if datatype == 2 { //int
-			attributeValue = strconv.FormatInt(int64(block.ReadInteger(offset)), 10) //写入int
+			//attributeValue = strconv.FormatInt(int64(block.ReadInteger(offset)), 10) //写入int
+			attributeValue = int(block.ReadInteger(offset))
 		} else if datatype == 3 { //float
-			attributeValue = strconv.FormatFloat(float64(block.ReadFloat(offset)), 'f', 5, 64)
+			//attributeValue = strconv.FormatFloat(float64(block.ReadFloat(offset)), 'f', 5, 64)
+			attributeValue = float32(block.ReadFloat(offset))
 		}
 		offset += length
-		result.AddAttributeValue(attributeValue)
+		result = append(result, attributeValue)
 	}
-	return *result
+	return result
 }
+
+//func GetTuple(tableName string, block buffermanager.Block, offset int) condition.TableRow {
+//	attributeNum := catalogmanager.GetAttributeNum(tableName)
+//	result := condition.NewTableRow([]string{})
+//	var attributeValue string
+//
+//	offset++ //跳过第一个标志位
+//	for i := 0; i < attributeNum; i++ {
+//		length := catalogmanager.GetLength2(tableName, i)
+//		datatype := catalogmanager.GetType(tableName, i)
+//		if datatype == 1 { //char
+//			attributeValue = block.ReadString(offset, length)
+//			first := strings.Index(attributeValue, string([]byte{0x00})) //存疑
+//			if first == -1 {
+//				first = len(attributeValue)
+//			}
+//			attributeValue = attributeValue[0:first] //存疑
+//		} else if datatype == 2 { //int
+//			attributeValue = strconv.FormatInt(int64(block.ReadInteger(offset)), 10) //写入int
+//			//attributeValue = int(block.ReadInteger(offset))
+//		} else if datatype == 3 { //float
+//			attributeValue = strconv.FormatFloat(float64(block.ReadFloat(offset)), 'f', 5, 64)
+//		}
+//		offset += length
+//		result.AddAttributeValue(attributeValue)
+//	}
+//	return *result
+//}
