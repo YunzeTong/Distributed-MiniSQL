@@ -8,7 +8,7 @@ import (
 )
 
 func (region *Region) Process(input *string, res *string) error {
-	log.Printf("%v: Region.Process called", region.ip)
+	log.Printf("%v: Region.Process called: %v", region.ip, *input)
 	*res = region.dbBridge.ProcessSQL(*input)
 	if *res == "invalid syntax" { // pending
 		return errors.New("syntax error")
@@ -35,8 +35,8 @@ func (region *Region) DownloadBackup(args *DownloadBackupArgs, res *bool) error 
 	for _, table := range args.Tables {
 		region.dbBridge.RestoreTable(table)
 	}
-	region.dbBridge.ftpClient.DownloadFile("catalog", args.Ip+"#table_catalog", "")
-	region.dbBridge.ftpClient.DownloadFile("catalog", args.Ip+"#index_catalog", "")
+	// region.dbBridge.ftpClient.DownloadFile("catalog", args.Ip+"#table_catalog", "")
+	// region.dbBridge.ftpClient.DownloadFile("catalog", args.Ip+"#index_catalog", "")
 	region.dbBridge.api.Init()
 	return nil
 }
