@@ -124,18 +124,18 @@ func (fu *FtpUtils) UploadFile(fileName string, savePath string, IP string) bool
 		fmt.Printf("%v\n", cur)
 	}
 
-	//根据savepath建立文件夹
-	err = fu.ftpClient.MakeDir(savePath)
-	if err != nil {
-		fmt.Printf("[from ftputils]make dir failed: %v\n", err)
-		return false
-	}
-	//切换到当前工作目录
-	err = fu.ftpClient.ChangeDir(savePath)
-	if err != nil {
-		fmt.Printf("[from ftputils]change dir failed: %v\n", err)
-		return false
-	}
+	// //根据savepath建立文件夹
+	// err = fu.ftpClient.MakeDir(savePath)
+	// if err != nil {
+	// 	fmt.Printf("[from ftputils]make dir failed: %v\n", err)
+	// 	return false
+	// }
+	// //切换到当前工作目录
+	// err = fu.ftpClient.ChangeDir(savePath)
+	// if err != nil {
+	// 	fmt.Printf("[from ftputils]change dir failed: %v\n", err)
+	// 	return false
+	// }
 	//先读取本地文件，https://www.codeleading.com/article/96605360211/
 	var file *os.File
 	file, err = os.Open(fileName)
