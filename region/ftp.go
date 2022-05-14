@@ -43,11 +43,7 @@ func (fu *FtpUtils) Login() {
 
 //退出登录且断开连接
 func (fu *FtpUtils) CloseConnect() {
-	err := fu.ftpClient.Logout()
-	if err != nil {
-		fmt.Printf("[from ftpUtils]ftp退出登录出现问题: %v\n", err)
-	}
-	err = fu.ftpClient.Quit()
+	err := fu.ftpClient.Quit()
 	if err != nil {
 		fmt.Printf("[from ftpUtils]ftp断开连接出现问题: %v\n", err)
 	}
@@ -116,14 +112,6 @@ func (fu *FtpUtils) DownloadFile(ftpPath string, fileName string, savePath strin
 func (fu *FtpUtils) UploadFile(fileName string, savePath string, IP string) bool {
 	fu.Login()
 
-	cur, err := fu.ftpClient.CurrentDir()
-	if err != nil {
-		fmt.Printf("[from ftputils]change dir failed: %v\n", err)
-		return false
-	} else {
-		fmt.Printf("%v\n", cur)
-	}
-
 	// //根据savepath建立文件夹
 	// err = fu.ftpClient.MakeDir(savePath)
 	// if err != nil {
@@ -137,8 +125,7 @@ func (fu *FtpUtils) UploadFile(fileName string, savePath string, IP string) bool
 	// 	return false
 	// }
 	//先读取本地文件，https://www.codeleading.com/article/96605360211/
-	var file *os.File
-	file, err = os.Open(fileName)
+	file, err := os.Open(fileName)
 	if err != nil {
 		fmt.Printf("[from ftputils]read file failed: %v\n", err)
 		return false
