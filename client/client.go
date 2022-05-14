@@ -98,28 +98,32 @@ func (client *Client) Run() {
 			if !ok {
 				ip = client.updateCache(table)
 				if ip == "" {
-					fmt.Println("can't find the ip which table in")
+					fmt.Println("can't find the corresponding ip in cache")
 					break
 				}
+			} else {
+				fmt.Println("find corresponding ip in cache: " + ip)
 			}
 			// call Region.Process rpc with ip var
 			result := ""
 			// obtain regionRPC
 			rpcRegion, ok := client.rpcRegionMap[ip]
 			if !ok {
-				fmt.Printf("region not in cache, add it to map")
+				fmt.Printf("region not in RPCcache, add it to map")
 				rpcRegion, err = rpc.DialHTTP("tcp", ip)
 				if err != nil {
 					fmt.Println("fail to connect to region: " + ip)
-					fmt.Println("IP is new but cann't connect")
+					fmt.Println("IP is new but can't connect")
 					delete(client.ipCache, table)
 					break
 				} else {
 					client.rpcRegionMap[ip] = rpcRegion
 				}
+			} else {
+				fmt.Println("[最终可删除]first phase: find corresponding rpc in rpc map")
 			}
 
-			call, err := TimeoutRPC(rpcRegion.Go("Region.Process", &ip, &result, nil), TIMEOUT)
+			call, err := TimeoutRPC(rpcRegion.Go("Region.Process", &input, &result, nil), TIMEOUT)
 			if err != nil {
 				fmt.Println("[region process]timeout")
 			}
@@ -144,7 +148,7 @@ func (client *Client) Run() {
 					break
 				}
 				// call Region.Process rpc again
-				call, err := TimeoutRPC(new_rpcRegion.Go("Region.Process", &ip, &result, nil), TIMEOUT)
+				call, err := TimeoutRPC(new_rpcRegion.Go("Region.Process", &input, &result, nil), TIMEOUT)
 				if err != nil {
 					fmt.Println("[no cache and region process]timeout")
 					break
@@ -156,6 +160,7 @@ func (client *Client) Run() {
 				fmt.Println("result: " + result)
 				client.ipCache[table] = new_ip
 				client.rpcRegionMap[new_ip] = new_rpcRegion
+				fmt.Println("[最终不一定非得删除]update ip: " + ip + " and add it to iptablemap")
 			}
 			fmt.Println("result: " + result)
 		}
@@ -191,12 +196,14 @@ func (client *Client) preprocessInput(input string) (table string, op TableOp, e
 			for i := 0; i < len(words); i++ {
 				if words[i] == "from" && i != (len(words)-1) {
 					table = words[i+1]
+					fmt.Println("[最终可删]operation: select, table: " + table)
 					break
 				}
 			}
 		} else if words[0] == "insert" || words[0] == "delete" {
 			if len(words) >= 3 {
 				table = words[2]
+				fmt.Println("[最终可删]operation: insert or delete, table: " + table)
 			}
 		}
 	}
