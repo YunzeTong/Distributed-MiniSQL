@@ -239,6 +239,66 @@ func Select2(address []catalogmanager.Address, conditions []condition.Condition)
 	return &result, false
 }
 
+
+func delete2(address []catalogmanager.Address, conditions []condition.Condition)(int,bool){
+	if len(address) == 0{
+		return 0, false
+	}
+	sortAddress(&address)
+	tableName:=address[0].FileName
+	blockOffsetPre:=-1
+	headBlock :=buffermanager.ReadBlockFromDiskQuote(tableName, 0)
+	var deleteBlock *buffermanager.Block
+	if headBlock==nil {
+		return 0,true
+	}
+	if !CheckCondition(tableName,conditions){
+		return 0,true
+	}
+	headBlock.IsLocked = true
+	deleteNum:= 0
+	for i:=0;i<len(address);i++{
+		blockOffset :=address[i].BlockOffset
+		byteOffset := address[i].ByteOffset
+		tupleOffset:=GetTupleOffset(tableName,blockOffset,byteOffset)
+		if i==0||blockOffset!=blockOffsetPre{
+			deleteBlock=buffermanager.ReadBlockFromDiskQuote(tableName, blockOffset)
+			if deleteBlock==nil{
+				headBlock.IsLocked = false
+				return deleteNum,false
+			}
+		}
+
+		if deleteBlock.ReadInteger(byteOffset)<0{
+			newRow:=GetTuple(tableName,*deleteBlock,byteOffset)
+			var j int
+			for j:=0;j<len(conditions);j++{
+				if !conditions[j].Satisfy(tableName,*newRow) {
+					break
+				}
+			}
+			if j==len(conditions) {
+				deleteBlock.WriteInteger(byteOffset,0)
+				deleteBlock.WriteInteger(byteOffset+1,int(headBlock.ReadInteger(0)))
+				headBlock.WriteInteger(0,tupleOffset)
+				deleteNum++
+				for k := 0; k <newRow.GetAttributeSize();k++{
+					attrName := catalogmanager.GetAttributeName(tableName,k)
+					if catalogmanager.IsIndexKey(tableName,attrName){
+						indexName := catalogmanager.GetIndexName(tableName,attrName)
+						index:= catalogmanager.GetIndex(indexName)
+						indexmanager.Delete(index,newRow.GetAttributeValue(k))
+					}
+				}
+			}
+		}
+		blockOffsetPre=blockOffset
+
+	}
+	headBlock.IsLocked=false
+	return deleteNum,false
+
+}
 func project(tableName string, result []condition.TableRow, projectName []string) ([]condition.TableRow, bool) {
 	projectResult := make([]condition.TableRow, 10)
 	for i := 0; i < len(result); i++ {
@@ -314,7 +374,7 @@ func GetTuple(tableName string, block buffermanager.Block, offset int) *conditio
 		type1 := catalogmanager.GetType(tableName, i)
 		if type1 == 1 {
 			attributeValue := block.ReadString(offset, length)
-			first := strings.Index(attributeValue, "\t")
+			first := strings.Index(attributeValue, string([]byte{0x00}))
 			if first == -1 {
 				first = len(attributeValue)
 			}
