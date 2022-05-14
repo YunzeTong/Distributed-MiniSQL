@@ -54,7 +54,18 @@ func (b *Block) ReadInteger(offset int) int32 {
 	return (b0 << 24) | (b1 << 16) | (b2 << 8) | b3
 }
 
-func (b *Block) WriteInteger(offset int, value int) bool {
+//func (b *Block) ReadByte(offset)int32{}
+
+func (b *Block) WriteByte(offset int, value byte) bool {
+	if offset+1 > BLOCKSIZE {
+		return false
+	}
+	b.BlockData[offset] = value
+	b.IsDirty = true
+	return true
+}
+
+func (b *Block) WriteInteger(offset int, value int32) bool {
 	if offset+4 > BLOCKSIZE {
 		return false
 	}
@@ -74,7 +85,8 @@ func (b *Block) ReadFloat(offset int) float32 {
 
 func (b *Block) WriteFloat(offset int, value float32) bool {
 	var dat int32 = *(*int32)(unsafe.Pointer(&value))
-	return b.WriteInteger(offset, int(dat))
+	b.IsDirty = true
+	return b.WriteInteger(offset, dat)
 }
 
 func (b *Block) ReadString(offset int, length int) string {
@@ -253,6 +265,7 @@ func WriteBlockToDisk(bid int) bool {
 		return false
 	}
 	buffer[bid].IsValid = false
+	buffer[bid].IsDirty = false
 	return true
 
 }

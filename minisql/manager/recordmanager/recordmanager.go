@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"strings"
 )
 
 //Recordmanager类
@@ -79,8 +78,9 @@ func Select(tableName string, conditions []condition.Condition) ([]condition.Tab
 				result = append(result, *newTableRow)
 			}
 			processNum++
+
 		}
-		blockOffset += storeLen
+		byteOffset += storeLen
 		if processNum >= tupleNum {
 			break
 		}
@@ -117,10 +117,10 @@ func Insert(tableName string, data condition.TableRow) (*catalogmanager.Address,
 	}
 	if freeOffset >= 0 {
 		freeOffset = insertBlock.ReadInteger(byteOffset + 1)
-		headBlock.WriteInteger(0, int(freeOffset))
+		headBlock.WriteInteger(0, freeOffset)
 	}
 	headBlock.IsLocked = false
-	WriteTuples(tableName, data, *insertBlock, byteOffset)
+	WriteTuples(tableName, data, insertBlock, byteOffset)
 	return catalogmanager.NewAddress(tableName, blockOffset, byteOffset), false
 
 }
@@ -156,15 +156,15 @@ func Delete2(address []catalogmanager.Address, conditions []condition.Condition)
 		if deleteBlock.ReadInteger(byteOffset) < 0 {
 			newRow := GetTuple(tableName, *deleteBlock, byteOffset)
 			var j int
-			for j := 0; j < len(conditions); j++ {
+			for j = 0; j < len(conditions); j++ {
 				if !conditions[j].Satisfy(tableName, *newRow) {
 					break
 				}
 			}
 			if j == len(conditions) {
 				deleteBlock.WriteInteger(byteOffset, 0)
-				deleteBlock.WriteInteger(byteOffset+1, int(headBlock.ReadInteger(0)))
-				headBlock.WriteInteger(0, tupleOffset)
+				deleteBlock.WriteInteger(byteOffset+1, headBlock.ReadInteger(0))
+				headBlock.WriteInteger(0, int32(tupleOffset))
 				deleteNum++
 				for k := 0; k < newRow.GetAttributeSize(); k++ {
 					attrName := catalogmanager.GetAttributeName(tableName, k)
@@ -222,8 +222,8 @@ func Delete(tableName string, conditions []condition.Condition) (int, bool) {
 			}
 			if i == len(conditions) {
 				laterBlock.WriteInteger(byteOffset, 0)
-				laterBlock.WriteInteger(byteOffset+1, int(headBlock.ReadInteger(0)))
-				headBlock.WriteInteger(0, currentNum)
+				laterBlock.WriteInteger(byteOffset+1, headBlock.ReadInteger(0))
+				headBlock.WriteInteger(0, int32(currentNum))
 				deleteNum++
 				for j := 0; j < newRow.GetAttributeSize(); j++ {
 					attrName := catalogmanager.GetAttributeName(tableName, j)
@@ -262,7 +262,7 @@ func Select2(address []catalogmanager.Address, conditions []condition.Condition)
 	sortAddress(&address)
 	tableName := address[0].FileName
 	blockOffsetPre := -1
-	result := make([]condition.TableRow, 10)
+	var result []condition.TableRow
 	if !CheckCondition(tableName, conditions) {
 		fmt.Print("the conditions have errors")
 		return nil, true
@@ -270,7 +270,7 @@ func Select2(address []catalogmanager.Address, conditions []condition.Condition)
 	for i := 0; i < len(address); i++ {
 		blockOffset := address[i].BlockOffset
 		byteOffset := address[i].ByteOffset
-		var block buffermanager.Block
+		var block *buffermanager.Block
 		if i == 0 || blockOffset != blockOffsetPre {
 			block := buffermanager.ReadBlockFromDiskQuote(tableName, blockOffset)
 			if block == nil {
@@ -282,7 +282,7 @@ func Select2(address []catalogmanager.Address, conditions []condition.Condition)
 		}
 		if block.ReadInteger(byteOffset) < 0 {
 			var j int
-			newRow := GetTuple(tableName, block, byteOffset)
+			newRow := GetTuple(tableName, *block, byteOffset)
 			for j = 0; j < len(conditions); j++ {
 				if !conditions[j].Satisfy(tableName, *newRow) {
 					break
@@ -299,9 +299,9 @@ func Select2(address []catalogmanager.Address, conditions []condition.Condition)
 }
 
 func Project(tableName string, result []condition.TableRow, projectName []string) ([]condition.TableRow, bool) {
-	projectResult := make([]condition.TableRow, 10)
+	var projectResult []condition.TableRow
 	for i := 0; i < len(result); i++ {
-		newRow := condition.NewTableRow(make([]string, 10))
+		newRow := condition.NewTableRow([]string{})
 		for j := 0; j < len(projectName); j++ {
 			index := catalogmanager.GetAttributeIndex(tableName, projectName[j])
 			if index == -1 {
@@ -372,12 +372,12 @@ func GetTuple(tableName string, block buffermanager.Block, offset int) *conditio
 		length := catalogmanager.GetLength2(tableName, i)
 		type1 := catalogmanager.GetType(tableName, i)
 		if type1 == 1 {
-			attributeValue := block.ReadString(offset, length)
-			first := strings.Index(attributeValue, string([]byte{0x00}))
-			if first == -1 {
-				first = len(attributeValue)
-			}
-			attributeValue = attributeValue[:first+1]
+			attributeValue = block.ReadString(offset, length)
+			//first := strings.Index(attributeValue, string([]byte{0x00}))
+			//if first == -1 {
+			//	first = len(attributeValue)
+			//}
+			//attributeValue = attributeValue[:first+1]
 		} else if type1 == 2 {
 			attributeValue = strconv.Itoa(int(block.ReadInteger(offset)))
 		} else if type1 == 3 {
@@ -389,9 +389,9 @@ func GetTuple(tableName string, block buffermanager.Block, offset int) *conditio
 	return result
 }
 
-func WriteTuples(tableName string, data condition.TableRow, block buffermanager.Block, offset int) {
+func WriteTuples(tableName string, data condition.TableRow, block *buffermanager.Block, offset int) {
 	attributeNum := catalogmanager.GetAttributeNum(tableName)
-	block.WriteInteger(offset, -1)
+	block.WriteByte(offset, 0xFF)
 	offset++
 	for i := 0; i < attributeNum; i++ {
 		length := catalogmanager.GetLength2(tableName, i)
@@ -405,7 +405,7 @@ func WriteTuples(tableName string, data condition.TableRow, block buffermanager.
 			block.WriteString(offset, data.GetAttributeValue(i))
 		} else if type1 == 2 {
 			k, _ := strconv.Atoi(data.AttributeValue[i])
-			block.WriteInteger(offset, k)
+			block.WriteInteger(offset, int32(k))
 		} else if type1 == 3 {
 			k, _ := strconv.ParseFloat(data.AttributeValue[i], 32)
 			block.WriteFloat(offset, float32(k))

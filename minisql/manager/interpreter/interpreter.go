@@ -250,7 +250,7 @@ func printRows(tab []condition.TableRow, tabName string) string {
 		}
 		v = append(v, length)
 		format := "|%-" + strconv.Itoa(length) + "s"
-		fmt.Print(format, attrName)
+		fmt.Printf(format, attrName)
 		result.WriteString(fmt.Sprintf(format, attrName))
 		//result.append(format).append(attrName)
 		cnt = cnt + length + 1
@@ -271,7 +271,7 @@ func printRows(tab []condition.TableRow, tabName string) string {
 		row = tab[i]
 		for j := 0; j < attrSize; j++ {
 			format := "|%-" + strconv.Itoa(v[j]) + "s"
-			fmt.Print(format, row.GetAttributeValue(j))
+			fmt.Printf(format, row.GetAttributeValue(j))
 			// result.append(format).append(row.getAttributeValue(j))
 			result.WriteString(fmt.Sprintf(format, row.GetAttributeValue(j)))
 		}
