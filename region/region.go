@@ -13,6 +13,10 @@ import (
 	. "Distributed-MiniSQL/common"
 )
 
+const (
+	BUFF = 10
+)
+
 type Region struct {
 	etcdClient   *clientv3.Client
 	masterClient *rpc.Client
@@ -70,6 +74,7 @@ func (region *Region) Run() {
 
 // https://pkg.go.dev/go.etcd.io/etcd@v3.3.27+incompatible/clientv3#Lease
 func (region *Region) stayOnline() {
+	time.Sleep(time.Second * BUFF)
 	ip, _ := region.getConfig()
 
 	for {

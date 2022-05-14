@@ -52,7 +52,7 @@ func (master *Master) watch() {
 			case mvccpb.DELETE:
 				pT, ok := master.serverTables[ip]
 				if !ok {
-					log.Printf("no such kv pair in master.serverTables: %v", ip)
+					continue
 				}
 				tables := *pT
 				if len(tables) == 0 {

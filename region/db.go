@@ -25,7 +25,7 @@ func (bridge *Bridge) Construct() {
 func (bridge *Bridge) ProcessSQL(sql string) string {
 	res := bridge.interpreter.Interpret(sql)
 	bridge.api.Store()
-	bridge.sendTCToFTP()
+	// bridge.sendTCToFTP()
 
 	sqlInfo, resInfo := strings.Split(sql, " "), strings.Split(res, " ")
 
@@ -41,11 +41,13 @@ func (bridge *Bridge) ProcessSQL(sql string) string {
 		DeleteFromSlice(&bridge.mockTables, resInfo[2])
 		log.Println("finish drop table " + resInfo[2])
 	case "-->Insert":
-		bridge.deleteFromFTP(sqlInfo[2])
-		bridge.sendToFTP(sqlInfo[2])
+		log.Printf("%v", sqlInfo[2])
+		// bridge.deleteFromFTP(sqlInfo[2])
+		// bridge.sendToFTP(sqlInfo[2])
 	case "-->Delete":
-		bridge.deleteFromFTP(sqlInfo[2])
-		bridge.sendToFTP(sqlInfo[2])
+		log.Printf("%v", sqlInfo[2])
+		// bridge.deleteFromFTP(sqlInfo[2])
+		// bridge.sendToFTP(sqlInfo[2])
 	default:
 	}
 	return res
@@ -75,6 +77,6 @@ func (bridge *Bridge) GetTables() []string {
 func (bridge *Bridge) RestoreTable(table string) {
 	DeleteLocalFile(table)
 	DeleteLocalFile(table + "_index.index")
-	bridge.ftpClient.DownloadFile("table", table, "")
-	bridge.ftpClient.DownloadFile("index", table+"_index.index", "")
+	// bridge.ftpClient.DownloadFile("table", table, "")
+	// bridge.ftpClient.DownloadFile("index", table+"_index.index", "")
 }

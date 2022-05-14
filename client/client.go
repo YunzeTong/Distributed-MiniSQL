@@ -43,8 +43,8 @@ func (client *Client) Run() {
 
 		for len(part_input) == 0 || part_input[len(part_input)-1] != ';' {
 			part_input, _ = bufio.NewReader(os.Stdin).ReadString('\n')
-			part_input = strings.TrimRight(part_input, "\n")
-			fmt.Println("[part test]" + part_input)
+			part_input = strings.TrimRight(part_input, "\r\n")
+			// fmt.Println("[part test]" + part_input)
 			if len(part_input) == 0 {
 				continue
 			}
@@ -84,18 +84,13 @@ func (client *Client) Run() {
 			}
 		case DROP:
 			// call Master.DropTable rpc
-			res := false
-			call, err := TimeoutRPC(client.rpcMaster.Go("Master.DropTable", &table, &res, nil), TIMEOUT)
+			dummy := false
+			call, err := TimeoutRPC(client.rpcMaster.Go("Master.DropTable", &table, &dummy, nil), TIMEOUT)
 			if err != nil {
 				fmt.Println("timeout")
 			}
 			if call.Error != nil {
-				fmt.Println("[input error]drop table failed")
-			}
-			if res {
-				fmt.Println("drop table succeed")
-			} else {
-				fmt.Println("drop table failed")
+				fmt.Println("[error]drop table failed")
 			}
 		case OTHERS:
 			// by default: only ip in ipCache, rpcregion will exist in rpcmap
