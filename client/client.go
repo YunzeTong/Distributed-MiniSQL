@@ -3,9 +3,11 @@ package client
 import (
 	// "Distributed-MiniSQL/common"
 	. "Distributed-MiniSQL/common"
+	"bufio"
 	"errors"
 	"fmt"
 	"net/rpc"
+	"os"
 	"strings"
 )
 
@@ -40,7 +42,9 @@ func (client *Client) Run() {
 		part_input := "" // part of the input, all of them compose input
 
 		for len(part_input) == 0 || part_input[len(part_input)-1] != ';' {
-			fmt.Scanln(&part_input)
+			part_input, _ = bufio.NewReader(os.Stdin).ReadString('\n')
+			part_input = strings.TrimRight(part_input, "\n")
+			fmt.Println("[part test]" + part_input)
 			if len(part_input) == 0 {
 				continue
 			}
