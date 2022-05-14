@@ -102,7 +102,7 @@ func (client *Client) Run() {
 					break
 				}
 			} else {
-				fmt.Println("find corresponding ip in cache: " + ip)
+				fmt.Println("find corresponding ip in table-ip map: " + ip)
 			}
 			// call Region.Process rpc with ip var
 			result := ""
@@ -117,6 +117,11 @@ func (client *Client) Run() {
 					delete(client.ipCache, table)
 					break
 				} else {
+					// client.ipCache[table] = ip
+					_, ok := client.ipCache[table]
+					if !ok {
+						fmt.Println("[正常情况下不会出现此打印]no ip-table cache in map")
+					}
 					client.rpcRegionMap[ip] = rpcRegion
 				}
 			} else {
