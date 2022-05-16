@@ -267,12 +267,13 @@ func Select2(address []catalogmanager.Address, conditions []condition.Condition)
 		fmt.Print("the conditions have errors")
 		return nil, true
 	}
+	var block *buffermanager.Block
 	for i := 0; i < len(address); i++ {
 		blockOffset := address[i].BlockOffset
 		byteOffset := address[i].ByteOffset
-		var block *buffermanager.Block
+
 		if i == 0 || blockOffset != blockOffsetPre {
-			block := buffermanager.ReadBlockFromDiskQuote(tableName, blockOffset)
+			block = buffermanager.ReadBlockFromDiskQuote(tableName, blockOffset)
 			if block == nil {
 				if i == 0 {
 					fmt.Print("get the block of this table fail")
@@ -378,6 +379,7 @@ func GetTuple(tableName string, block buffermanager.Block, offset int) *conditio
 			//	first = len(attributeValue)
 			//}
 			//attributeValue = attributeValue[:first+1]
+			attributeValue = rmu0000(attributeValue)
 		} else if type1 == 2 {
 			attributeValue = strconv.Itoa(int(block.ReadInteger(offset)))
 		} else if type1 == 3 {
@@ -389,6 +391,16 @@ func GetTuple(tableName string, block buffermanager.Block, offset int) *conditio
 	return result
 }
 
+func rmu0000(s string) string {
+	str := make([]rune, 0, len(s))
+	for _, v := range []rune(s) {
+		if v == 0 {
+			continue
+		}
+		str = append(str, v)
+	}
+	return string(str)
+}
 func WriteTuples(tableName string, data condition.TableRow, block *buffermanager.Block, offset int) {
 	attributeNum := catalogmanager.GetAttributeNum(tableName)
 	block.WriteByte(offset, 0xFF)

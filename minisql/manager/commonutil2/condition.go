@@ -46,7 +46,8 @@ func (c *Condition) Satisfy(tableName string, data TableRow) bool {
 		cmpObject := data.GetAttributeValue(index)
 		cmpValue := c.Value
 		if c.Operator == "=" {
-			return strings.Compare(cmpObject, cmpValue) == 0
+			flag := cmpObject == cmpValue
+			return flag
 		} else if c.Operator == "<>" {
 			return strings.Compare(cmpObject, cmpValue) != 0
 		} else if c.Operator == ">" {

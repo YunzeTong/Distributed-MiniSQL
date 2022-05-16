@@ -151,8 +151,8 @@ func parseInsert(statement string) string {
 
 	}
 	api.InsertRow(tableName, tableRow)
-	fmt.Println("")
-	result.WriteString("-->Insert successfully")
+	fmt.Println("-->Insert successfully")
+	//result.WriteString("-->Insert successfully")
 	return result.String()
 }
 
@@ -198,8 +198,9 @@ func createCondition(conSet []string) []condition.Condition {
 		}
 		attr := strings.Trim(substring(conSet[i], "", OPERATOR[index1]), " ")
 		value := strings.Trim(substring(conSet[i], OPERATOR[index1], ""), " ")
-		replaceString(value, "", "\\'")
-		replaceString(value, "", "\"")
+		if whetheryinhao(value) {
+			value = value[1 : len(value)-1]
+		}
 		c = append(c, condition.Condition{attr, value, OPERATOR[index1]})
 	}
 	return c

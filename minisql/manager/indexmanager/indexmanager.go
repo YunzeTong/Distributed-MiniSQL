@@ -1,16 +1,14 @@
 package indexmanager
 
 import (
-	"bufio"
-	"fmt"
-	"os"
-	"strconv"
-	"strings"
-
 	buffermanager "Distributed-MiniSQL/minisql/manager/buffermanager"
 	catalogmanager "Distributed-MiniSQL/minisql/manager/catalogmanager"
 	index "Distributed-MiniSQL/minisql/manager/commonutil"
 	condition "Distributed-MiniSQL/minisql/manager/commonutil2"
+	"bufio"
+	"fmt"
+	"os"
+	"strconv"
 )
 
 //TreeMap保存已建立的B+树的信息
@@ -210,11 +208,8 @@ func GetTuple(tableName string, block buffermanager.Block, offset int) []interfa
 		datatype := catalogmanager.GetType(tableName, i)
 		if datatype == 1 { //char
 			attributeValue = block.ReadString(offset, length)
-			first := strings.Index(attributeValue.(string), string([]byte{0x00})) //存疑
-			if first == -1 {
-				first = len(attributeValue.(string))
-			}
-			attributeValue = attributeValue.(string)[0:first] //存疑
+
+			attributeValue = rmu0000(attributeValue.(string))
 		} else if datatype == 2 { //int
 			//attributeValue = strconv.FormatInt(int64(block.ReadInteger(offset)), 10) //写入int
 			attributeValue = int(block.ReadInteger(offset))
@@ -226,6 +221,17 @@ func GetTuple(tableName string, block buffermanager.Block, offset int) []interfa
 		result = append(result, attributeValue)
 	}
 	return result
+}
+
+func rmu0000(s string) string {
+	str := make([]rune, 0, len(s))
+	for _, v := range []rune(s) {
+		if v == 0 {
+			continue
+		}
+		str = append(str, v)
+	}
+	return string(str)
 }
 
 //func GetTuple(tableName string, block buffermanager.Block, offset int) condition.TableRow {
