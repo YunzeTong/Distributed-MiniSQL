@@ -38,6 +38,7 @@ func InitIndex() {
 		CreateIndex(*index.NewIndex2(tempIndexName, tempTableName, tempAttributeName, tempBlockNum, tempRootNum))
 		i += 5
 	}
+	fmt.Println("索引信息加载成功")
 }
 
 func CreateIndex(idx index.Index) bool {

@@ -74,7 +74,7 @@ func InitTable() {
 		i = i + 4*tempAttributeNum
 		Tables[tempTableName] = *NewTable2(tempTableName, tempPrimaryKey, tempAttributeVector, tempIndexVector, tempRowNum)
 	}
-	// fmt.Println(Tables)
+	fmt.Println("表信息加载成功")
 }
 
 func InitIndex() {
@@ -98,10 +98,11 @@ func InitIndex() {
 		Indexs[tempIndexName] = *index.NewIndex2(tempIndexName, tempTableName, tempAttributeName, tempBlockNum, tempRootNum)
 		i += 5
 	}
+	fmt.Println("索引信息文件加载成功")
 }
 
 func StoreTable() {
-	file, err := os.OpenFile(TableFileName, os.O_WRONLY|os.O_CREATE, 0666)
+	file, err := os.OpenFile(TableFileName, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0666)
 	if err != nil {
 		fmt.Println("打开文件错误")
 		fmt.Println(err)
@@ -113,7 +114,6 @@ func StoreTable() {
 	count := 1
 	for _, v := range Tables {
 		fmt.Fprintln(w, v.TableName)
-		fmt.Println(err)
 		// fmt.Println(v.TableName)
 		// if err != nil{
 		// 	fmt.Println(err)
@@ -142,7 +142,7 @@ func StoreTable() {
 }
 
 func StoreIndex() {
-	file, err := os.OpenFile(IndexFileName, os.O_WRONLY|os.O_CREATE, 0666)
+	file, err := os.OpenFile(IndexFileName, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0666)
 	if err != nil {
 		fmt.Println("打开文件错误")
 		fmt.Println(err)
