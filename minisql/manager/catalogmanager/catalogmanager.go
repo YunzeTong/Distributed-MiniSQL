@@ -263,6 +263,15 @@ func IsAttributeExist(tableName string, attributeName string) bool {
 	return false
 }
 
+func IsTableExist(tableName string) bool {
+	_, ok := Tables[tableName]
+	if ok {
+		return true
+	} else {
+		return false
+	}
+}
+
 func GetIndexName(tableName string, attribute string) string {
 	value, ok := Tables[tableName]
 	if ok {
