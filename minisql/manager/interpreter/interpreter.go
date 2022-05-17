@@ -286,111 +286,111 @@ func printRows(tab []condition.TableRow, tabName string) string {
 	return result.String()
 }
 
-func bufInterpret(reader *bufio.Reader) string {
-	restState := ""
-	for true {
-		var returnValue, statement strings.Builder
-		var index1 int
-		if strings.Contains(restState, ";") {
-			index1 = strings.Index(restState, ";")
-			statement.WriteString(restState[0:index1])
-			restState = restState[index1+1:]
-		} else {
-			statement.WriteString(restState)
-			statement.WriteString(" ")
-			if execFile == 0 {
-				fmt.Println("MiniSQL-->")
-			}
-			for true {
-				lineByte, _, _ := reader.ReadLine()
-				line := string(lineByte)
-				if line == "" {
-					break
-				} else if strings.Contains(line, ";") {
-					index1 = strings.Index(line, ";")
-					statement.WriteString(line[0:index1])
-					restState = line[index1+1:]
-					break
-				} else {
-					statement.WriteString(line)
-					statement.WriteString(" ")
-					if execFile == 0 {
-						fmt.Println("MiniSQL-->")
-					}
-				}
-			}
-		}
-		result := strings.Trim(statement.String(), " ")
-		result = replaceString(result, " ", "\\s+")
-		var tokens []string
-		tokens = strings.Split(result, " ")
-
-		if len(tokens) == 1 && tokens[0] == "" {
-			panic(qexception.Qexception{0, 200, "No statement specified"})
-		}
-		switch tokens[0] { //match keyword
-		case "create":
-			if len(tokens) == 1 {
-				panic(qexception.Qexception{0, 201, "Can't find create object"})
-			}
-			switch tokens[1] {
-			case "table":
-				parseCreateTable(result)
-				break
-			case "index":
-				parseCreateIndex(result)
-				break
-			default:
-				panic(qexception.Qexception{0, 202, "Can't identify " + tokens[1]})
-			}
-			break
-		case "drop":
-			if len(tokens) == 1 {
-				panic(qexception.Qexception{0, 203, "Can't find drop object"})
-			}
-			switch tokens[1] {
-			case "table":
-				parseDropTable(result)
-				break
-			case "index":
-				parseDropIndex(result)
-				break
-			default:
-				panic(qexception.Qexception{0, 204, "Can't identify " + tokens[1]})
-			}
-			break
-		case "select":
-			returnValue.WriteString(parseSelect(result))
-			break
-		case "insert":
-			parseInsert(result)
-			break
-		case "delete":
-			parseDelete(result)
-			break
-		case "quit":
-			parseQuit(result)
-			break
-		case "execfile":
-			parseSqlFile(result)
-			break
-		case "show":
-			parseShow(result)
-			break
-		default:
-			panic(qexception.Qexception{0, 205, "Can't identify " + tokens[0]})
-		}
-		//} catch (QException e) {
-		//    System.out.println(e.status + " " + QException.ex[e.type] + ": " + e.msg);
-		//} catch (Exception e) {
-		//    System.out.println("Default error: " + e.getMessage());
-		//}
-
-		return returnValue.String()
-	}
-	//用不到
-	return ""
-}
+//func bufInterpret(reader *bufio.Reader) string {
+//	restState := ""
+//	for true {
+//		var returnValue, statement strings.Builder
+//		var index1 int
+//		if strings.Contains(restState, ";") {
+//			index1 = strings.Index(restState, ";")
+//			statement.WriteString(restState[0:index1])
+//			restState = restState[index1+1:]
+//		} else {
+//			statement.WriteString(restState)
+//			statement.WriteString(" ")
+//			if execFile == 0 {
+//				fmt.Println("MiniSQL-->")
+//			}
+//			for true {
+//				lineByte, _, _ := reader.ReadLine()
+//				line := string(lineByte)
+//				if line == "" {
+//					break
+//				} else if strings.Contains(line, ";") {
+//					index1 = strings.Index(line, ";")
+//					statement.WriteString(line[0:index1])
+//					restState = line[index1+1:]
+//					break
+//				} else {
+//					statement.WriteString(line)
+//					statement.WriteString(" ")
+//					if execFile == 0 {
+//						fmt.Println("MiniSQL-->")
+//					}
+//				}
+//			}
+//		}
+//		result := strings.Trim(statement.String(), " ")
+//		result = replaceString(result, " ", "\\s+")
+//		var tokens []string
+//		tokens = strings.Split(result, " ")
+//
+//		if len(tokens) == 1 && tokens[0] == "" {
+//			panic(qexception.Qexception{0, 200, "No statement specified"})
+//		}
+//		switch tokens[0] { //match keyword
+//		case "create":
+//			if len(tokens) == 1 {
+//				panic(qexception.Qexception{0, 201, "Can't find create object"})
+//			}
+//			switch tokens[1] {
+//			case "table":
+//				parseCreateTable(result)
+//				break
+//			case "index":
+//				parseCreateIndex(result)
+//				break
+//			default:
+//				panic(qexception.Qexception{0, 202, "Can't identify " + tokens[1]})
+//			}
+//			break
+//		case "drop":
+//			if len(tokens) == 1 {
+//				panic(qexception.Qexception{0, 203, "Can't find drop object"})
+//			}
+//			switch tokens[1] {
+//			case "table":
+//				parseDropTable(result)
+//				break
+//			case "index":
+//				parseDropIndex(result)
+//				break
+//			default:
+//				panic(qexception.Qexception{0, 204, "Can't identify " + tokens[1]})
+//			}
+//			break
+//		case "select":
+//			returnValue.WriteString(parseSelect(result))
+//			break
+//		case "insert":
+//			parseInsert(result)
+//			break
+//		case "delete":
+//			parseDelete(result)
+//			break
+//		case "quit":
+//			parseQuit(result)
+//			break
+//		case "execfile":
+//			parseSqlFile(result)
+//			break
+//		case "show":
+//			parseShow(result)
+//			break
+//		default:
+//			panic(qexception.Qexception{0, 205, "Can't identify " + tokens[0]})
+//		}
+//		//} catch (QException e) {
+//		//    System.out.println(e.status + " " + QException.ex[e.type] + ": " + e.msg);
+//		//} catch (Exception e) {
+//		//    System.out.println("Default error: " + e.getMessage());
+//		//}
+//
+//		return returnValue.String()
+//	}
+//	//用不到
+//	return ""
+//}
 
 // line 39
 func strInterpret(sql string) string {
@@ -870,7 +870,6 @@ func parseQuit(statement string) {
 }
 
 func parseSqlFile(statement string) {
-	execFile++
 	tokens := strings.Split(statement, " ")
 	if len(tokens) != 2 {
 		panic(qexception.Qexception{0, 1101, "Extra parameters in sql file execution"})
@@ -881,9 +880,14 @@ func parseSqlFile(statement string) {
 		panic(qexception.Qexception{1, 1103, "Can't find the file"})
 	}
 	defer fi.Close()
-	rd := bufio.NewReader(fi)
-
-	bufInterpret(rd)
+	var lines []string
+	scanner := bufio.NewScanner(fi)
+	for scanner.Scan() {
+		lines = append(lines, scanner.Text())
+	}
+	for i := 0; i < len(lines); i++ {
+		strInterpret(lines[i])
+	}
 	//
 	//if ionot {
 	//	panic(qexception.Qexception{DataType: 1, Status: 1104, Msg: "IO exception occurs"})
