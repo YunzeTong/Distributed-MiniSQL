@@ -236,7 +236,7 @@ func getMaxAttrLength(tab []condition.TableRow, index int) int {
 func printRows(tab []condition.TableRow, tabName string) string {
 	var result strings.Builder
 	if len(tab) == 0 {
-		fmt.Println()
+		fmt.Println("-->Query ok! 0 rows are selected")
 		return "-->Query ok! 0 rows are selected\n"
 	}
 	attrSize := tab[0].GetAttributeSize()
@@ -716,9 +716,30 @@ func parseSelect(statement string) string {
 			var ret []condition.TableRow
 			var attriName []string
 			var conditions []condition.Condition
-			ret = api.Select(tabStr, attriName, conditions)
-			endTime = time.Now().Unix()
-			result += printRows(ret, tabStr)
+			var ok bool
+			ok = catalogmanager.IsTableExist(tabStr)
+			if ok == false {
+				fmt.Println("-->Table not exist !")
+				endTime = time.Now().Unix()
+			} else {
+				ok := true
+				for i := 0; i < len(conditions); i++ {
+					if catalogmanager.IsAttributeExist(tabStr, conditions[i].Name) == false {
+						ok = false
+						break
+					}
+				}
+				if ok == false {
+					fmt.Println("-->Attribute name not exist !")
+					endTime = time.Now().Unix()
+				} else {
+					ret = api.Select(tabStr, attriName, conditions)
+					endTime = time.Now().Unix()
+					result += printRows(ret, tabStr)
+				}
+
+			}
+
 		} else { //select * from [] where [];
 			var conSet []string
 			conSet = strings.Split(conStr, " *and *")
@@ -726,28 +747,105 @@ func parseSelect(statement string) string {
 			conditions := createCondition(conSet)
 			var ret []condition.TableRow //vector
 			var attriName []string
-			ret = api.Select(tabStr, attriName, conditions)
-			endTime = time.Now().Unix()
-			result += printRows(ret, tabStr)
+			var ok bool
+			ok = catalogmanager.IsTableExist(tabStr)
+			if ok == false {
+				fmt.Println("-->Table not exist !")
+				endTime = time.Now().Unix()
+			} else {
+				ok := true
+				for i := 0; i < len(conditions); i++ {
+					if catalogmanager.IsAttributeExist(tabStr, conditions[i].Name) == false {
+						ok = false
+						break
+					}
+				}
+				if ok == false {
+					fmt.Println("-->Attribute name not exist !")
+					endTime = time.Now().Unix()
+				} else {
+					ret = api.Select(tabStr, attriName, conditions)
+					endTime = time.Now().Unix()
+					result += printRows(ret, tabStr)
+				}
+
+			}
+
 		}
 	} else {
-		attrNames = strings.Split(attrStr, " *, *") //get attributes list
+		reg := regexp.MustCompile(" *, *")
+		attrNames = reg.Split(attrStr, -1)
+		//attrNames = strings.Split(attrStr, " *, *") //get attributes list
+		//fmt.Println(attrNames)
 		if tabStr == "" {
-			// tabStr = Utils.substring(statement, "from ", "")
+			tabStr = substring(statement, "from ", "")
 			var ret []condition.TableRow
 			var conditions []condition.Condition
-			ret = api.Select(tabStr, attrNames, conditions)
-			endTime = time.Now().Unix()
-			result += printRows(ret, tabStr)
+			var ok bool
+			ok = catalogmanager.IsTableExist(tabStr)
+			if ok == false {
+				fmt.Println("-->Table not exist !")
+				endTime = time.Now().Unix()
+			} else {
+				ok := true
+				for i := 0; i < len(attrNames); i++ {
+					if catalogmanager.IsAttributeExist(tabStr, attrNames[i]) == false {
+						ok = false
+						break
+					}
+				}
+				for i := 0; i < len(conditions); i++ {
+					if catalogmanager.IsAttributeExist(tabStr, conditions[i].Name) == false {
+						ok = false
+						break
+					}
+				}
+				if ok == false {
+					fmt.Println("-->Attribute name not exist !")
+					endTime = time.Now().Unix()
+				} else {
+					ret = api.Select(tabStr, attrNames, conditions)
+					endTime = time.Now().Unix()
+					result += printRows(ret, tabStr)
+				}
+			}
+
 		} else {
 			var conSet []string
-			conSet = strings.Split(conStr, " *and *")
+			reg := regexp.MustCompile(" *and *")
+			conSet = reg.Split(conStr, -1)
 			//get condition vector
 			conditions = createCondition(conSet)
-			var ret []condition.TableRow
-			ret = api.Select(tabStr, attrNames, conditions)
-			endTime = time.Now().Unix()
-			result += printRows(ret, tabStr)
+			var ok bool
+			ok = catalogmanager.IsTableExist(tabStr)
+			if ok == false {
+				fmt.Println("-->Table not exist !")
+				endTime = time.Now().Unix()
+			} else {
+				ok := true
+				for i := 0; i < len(attrNames); i++ {
+					if catalogmanager.IsAttributeExist(tabStr, attrNames[i]) == false {
+						ok = false
+						break
+					}
+				}
+				for i := 0; i < len(conditions); i++ {
+					if catalogmanager.IsAttributeExist(tabStr, conditions[i].Name) == false {
+						ok = false
+						break
+					}
+				}
+				if ok == false {
+					fmt.Println("-->Attribute name not exist !")
+					endTime = time.Now().Unix()
+				} else {
+					var ret []condition.TableRow
+					ret = api.Select(tabStr, attrNames, conditions)
+					endTime = time.Now().Unix()
+					result += printRows(ret, tabStr)
+				}
+			}
+
 		}
 	}
 	var usedTime float64
