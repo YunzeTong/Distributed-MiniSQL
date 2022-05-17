@@ -3,6 +3,7 @@ package region
 import (
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"strings"
 	"time"
@@ -60,12 +61,12 @@ func (fu *FtpUtils) CloseConnect() {
 func (fu *FtpUtils) DownloadFile(ftpPath string, fileName string, savePath string) bool {
 	fu.Login()
 
-	//切换到工作目录
-	err := fu.ftpClient.ChangeDir(ftpPath)
-	if err != nil {
-		fmt.Println("[from ftputils]ftpPath not exist")
-		return false
-	}
+	// //切换到工作目录
+	// err := fu.ftpClient.ChangeDir(ftpPath)
+	// if err != nil {
+	// 	fmt.Println("[from ftputils]ftpPath not exist")
+	// 	return false
+	// }
 
 	//获取savePath下的所有文件的entry  https://www.serv-u.com/resource/tutorial/appe-stor-stou-retr-list-mlsd-mlst-ftp-command
 	ftpFiles, e := fu.ftpClient.List("./") //TODO:个人认为前面已经设了工作目录的话这里就直接指定当前就行了，待验证
@@ -73,7 +74,7 @@ func (fu *FtpUtils) DownloadFile(ftpPath string, fileName string, savePath strin
 		fmt.Printf("[from ftputils]ftpfiles list fail: %v\n", e)
 		return false
 	}
-	if ftpFiles == nil || len(ftpFiles) == 0 {
+	if ftpFiles == nil {
 		fmt.Println("[from ftputils]list下无文件")
 		return false
 	}
@@ -152,8 +153,13 @@ func (fu *FtpUtils) UploadFile(fileName string, savePath string, IP string) bool
 // fileName:要删的ftp上文件名
 func (fu *FtpUtils) DeleteFile(fileName string, filePath string) bool {
 	fu.Login()
-	fu.ftpClient.ChangeDir(filePath)
-	err := fu.ftpClient.Delete(fileName)
+	// fu.ftpClient.ChangeDir(filePath)
+	cur, err := fu.ftpClient.CurrentDir()
+	if err != nil {
+		log.Printf("current dir dir")
+	}
+	log.Printf("%v", cur)
+	err = fu.ftpClient.Delete(fileName)
 	if err != nil {
 		fmt.Printf("[from ftputils]delete file failed: %v\n", err)
 		return false
