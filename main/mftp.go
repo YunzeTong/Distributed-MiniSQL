@@ -16,10 +16,10 @@ func main() {
 	fmt.Println("start to upload")
 	ftp.UploadFile(fileName, ftpPath, "") //假定当前路径minisql，将test.txt传入到  /home/tyz
 	fmt.Println("upload test finished")
-	// fmt.Println("start to download file")
-	// ftp.DownloadFile()
-	// fmt.Println("finish downloading")
-	// fmt.Println("start to delete file")
-	// ftp.DeleteFile(fileName, ftpPath)     // 删除/home/tyz下的test.txt
-	// fmt.Println("finish deleting")
+	fmt.Println("start to download file")
+	ftp.DownloadFile("./", fileName, "./main/")
+	fmt.Println("finish downloading")
+	fmt.Println("start to delete file")
+	ftp.DeleteFile(fileName, "./") // 删除/home/tyz下的test.txt
+	fmt.Println("finish deleting")
 }
