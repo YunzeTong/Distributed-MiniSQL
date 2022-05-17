@@ -1,6 +1,7 @@
 package recordmanager
 
 import (
+	"Distributed-MiniSQL/common"
 	buffermanager "Distributed-MiniSQL/minisql/manager/buffermanager"
 	catalogmanager "Distributed-MiniSQL/minisql/manager/catalogmanager"
 	condition "Distributed-MiniSQL/minisql/manager/commonutil2"
@@ -13,7 +14,7 @@ import (
 //Recordmanager类
 
 func CreateTable(tableName string) bool {
-	file, err := os.OpenFile(tableName, os.O_RDWR|os.O_CREATE, 0666)
+	file, err := os.OpenFile(common.DIR+tableName, os.O_RDWR|os.O_CREATE, 0666)
 	defer file.Close()
 	if err != nil {
 		fmt.Print(err)
@@ -30,7 +31,7 @@ func CreateTable(tableName string) bool {
 }
 
 func DropTable(tableName string) bool {
-	err := os.Remove(tableName)
+	err := os.Remove(common.DIR + tableName)
 	if err != nil {
 		fmt.Print(err)
 		return false

@@ -1,6 +1,7 @@
 package indexmanager
 
 import (
+	"Distributed-MiniSQL/common"
 	buffermanager "Distributed-MiniSQL/minisql/manager/buffermanager"
 	catalogmanager "Distributed-MiniSQL/minisql/manager/catalogmanager"
 	index "Distributed-MiniSQL/minisql/manager/commonutil"
@@ -16,7 +17,7 @@ var TreeMap = make(map[string]BPTree)
 
 //initialIndex函数,与catalogmanager中的略有不同
 func InitIndex() {
-	FileName := "./indexCatalog.txt"
+	FileName := common.DIR + "indexCatalog.txt"
 	file, err := os.Open(FileName)
 	if err != nil {
 		fmt.Println("文件打开失败")
@@ -41,7 +42,7 @@ func InitIndex() {
 }
 
 func CreateIndex(idx index.Index) bool {
-	fileName := idx.IndexName + ".index" //只是建立了一个索引文件，实际上的内容只保存在内存中，而没有存到文件里
+	fileName := common.DIR + idx.IndexName + ".index" //只是建立了一个索引文件，实际上的内容只保存在内存中，而没有存到文件里
 	BuildIndex(idx)
 	file, err := os.OpenFile(fileName, os.O_WRONLY|os.O_CREATE, 0666)
 	if err != nil {
@@ -62,7 +63,7 @@ func CreateIndex(idx index.Index) bool {
 }
 
 func DropIndex(idx index.Index) bool {
-	fileName := idx.IndexName + ".index"
+	fileName := common.DIR + idx.IndexName + ".index"
 	err := os.Remove(fileName) //删除文件
 	if err != nil {
 		fmt.Println("删除失败")

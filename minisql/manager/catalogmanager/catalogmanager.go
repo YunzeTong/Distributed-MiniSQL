@@ -1,18 +1,18 @@
 package catalogmanager
 
 import (
+	"Distributed-MiniSQL/common"
+	index "Distributed-MiniSQL/minisql/manager/commonutil"
 	"bufio"
 	"fmt"
 	"os"
 	"strconv"
-
-	index "Distributed-MiniSQL/minisql/manager/commonutil"
 )
 
-const TableFileName = "./tableCatalog.txt"
+const TableFileName = common.DIR + "tableCatalog.txt"
 
 // const TableFileName2 = "./tableCatalog.txt"
-const IndexFileName = "./indexCatalog.txt"
+const IndexFileName = common.DIR + "indexCatalog.txt"
 
 var Tables = make(map[string]Table)
 var Indexs = make(map[string]index.Index)

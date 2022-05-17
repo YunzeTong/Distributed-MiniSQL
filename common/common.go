@@ -22,6 +22,9 @@ const (
 
 	// etcd
 	HOST_ADDR = "127.0.0.1:2379"
+
+	// minisql files
+	DIR = "sql/"
 )
 
 type CreateTableArgs struct {

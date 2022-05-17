@@ -11,6 +11,7 @@ import (
 	clientv3 "go.etcd.io/etcd/client/v3"
 
 	. "Distributed-MiniSQL/common"
+	api "Distributed-MiniSQL/minisql/manager/api"
 )
 
 const (
@@ -22,17 +23,19 @@ type Region struct {
 	masterIP     string
 	hostIP       string
 	masterClient *rpc.Client
-	dbBridge     Bridge
+	ftpClient    FtpUtils
 
-	mockTables []string
+	// mockTables []string
 }
 
 func (region *Region) Init(hostIP, masterIP string) {
 	region.masterIP = masterIP
 	region.hostIP = hostIP
 
-	region.dbBridge.Construct(masterIP, &region.hostIP)
-	region.mockTables = make([]string, 0)
+	api.Initial()
+	region.ftpClient.Construct(region.masterIP)
+
+	// region.mockTables = make([]string, 0)
 }
 
 func (region *Region) Run() {
