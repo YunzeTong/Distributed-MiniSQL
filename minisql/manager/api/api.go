@@ -4,6 +4,7 @@ import (
 	"Distributed-MiniSQL/minisql/manager/buffermanager"
 	"Distributed-MiniSQL/minisql/manager/catalogmanager"
 	index "Distributed-MiniSQL/minisql/manager/commonutil"
+
 	condition "Distributed-MiniSQL/minisql/manager/commonutil2"
 	"Distributed-MiniSQL/minisql/manager/indexmanager"
 	"Distributed-MiniSQL/minisql/manager/qexception"
@@ -25,6 +26,15 @@ func Initial() {
 	//}
 }
 
+func GetTables() []string {
+	var tableName map[string]catalogmanager.Table
+	tableName = catalogmanager.GetTables()
+	var res []string
+	for key, _ := range tableName {
+		res = append(res, key)
+	}
+	return res
+}
 func Store() {
 	catalogmanager.StoreCatalog()
 	recordmanager.StoreRecord()
