@@ -116,6 +116,7 @@ func parseInsert(statement string) string {
 			valueParas[i] = valueParas[i][1 : len(valueParas[i])-1]
 		}
 		tableRow.AddAttributeValue(valueParas[i])
+
 	}
 	if tableRow.GetAttributeSize() != catalogmanager.GetAttributeNum(tableName) {
 		panic(qexception.Qexception{1, 909, "Attribute number doesn't match"})
