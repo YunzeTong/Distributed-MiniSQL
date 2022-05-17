@@ -19,6 +19,6 @@ func main() {
 	ftp.DownloadFile("", fileName, "./main/")
 	fmt.Println("finish downloading")
 	fmt.Println("start to delete file")
-	ftp.DeleteFile(fileName, "") // 删除/home/tyz下的test.txt
+	// ftp.DeleteFile(fileName, "") // 删除/home/tyz下的test.txt
 	fmt.Println("finish deleting")
 }
