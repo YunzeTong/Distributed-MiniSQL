@@ -64,7 +64,10 @@ func GetHostIP() string {
 }
 
 func DeleteLocalFile(fileName string) {
-	// TODO
+	err := os.Remove(fileName)
+	if err != nil {
+		fmt.Printf("delete local file failed: %v\n", err)
+	}
 }
 
 // rpc util
