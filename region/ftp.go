@@ -18,8 +18,8 @@ type FtpUtils struct {
 	ftpClient *ftp.ServerConn
 }
 
-func (fu *FtpUtils) Construct(masterIp string) {
-	fu.hostIP = masterIp
+func (fu *FtpUtils) Construct(masterIP string) {
+	fu.hostIP = masterIP
 	fu.port = "21"
 	fu.username = "tyz"
 	fu.password = "tyz"

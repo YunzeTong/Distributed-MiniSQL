@@ -59,7 +59,7 @@ func (master *Master) watch() {
 					}
 					bestServer := master.bestServer(ip)
 					client := master.regionClients[bestServer]
-					args, dummy := DownloadBackupArgs{Ip: ip, Tables: tables}, false
+					args, dummy := DownloadBackupArgs{IP: ip, Tables: tables}, false
 					// assume that other regions would not go down shortly after one did
 					_, _ = TimeoutRPC(client.Go("Region.DownloadBackup", &args, &dummy, nil), TIMEOUT)
 					// assume no error
