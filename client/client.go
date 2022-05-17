@@ -53,7 +53,7 @@ func (client *Client) Run() {
 			input += " "
 		}
 
-		input = strings.Trim(input, "; ")
+		input = strings.Trim(input, " ")
 
 		fmt.Println("[风神翼龙test in loop]input: " + input)
 
