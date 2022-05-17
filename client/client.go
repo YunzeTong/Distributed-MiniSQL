@@ -23,6 +23,7 @@ const (
 	CREATE = 0
 	DROP   = 1
 	OTHERS = 2
+	SHOW   = 3
 )
 
 func (client *Client) Init(masterIP string) {
@@ -169,7 +170,14 @@ func (client *Client) Run() {
 				fmt.Println("[最终不一定非得删除]update ip: " + ip + " and add it to iptablemap")
 			}
 			fmt.Println("result: " + result)
+		case SHOW:
+			showChoice := table
+			fmt.Println("show " + showChoice)
+			// TODO: 调用show
+			//result =
+			//fmt.Println(result)
 		}
+
 	}
 }
 
@@ -211,13 +219,28 @@ func (client *Client) preprocessInput(input string) (table string, op TableOp, e
 				table = words[2]
 				fmt.Println("[最终可删]operation: insert or delete, table: " + table)
 			}
+		} else if words[0] == "show" {
+			op = SHOW
+			if len(words) >= 2 {
+				if words[1] == "tables" || words[1] == "indexes" {
+					table = words[1]
+				} else {
+					fmt.Println("command show doesn't offer proper hints")
+				}
+			} else {
+				fmt.Println("command show doesn't offer proper hints")
+			}
 		}
 	}
 
 	// 只要table仍为""，说明没拿到表名
-	if table == "" {
+	if table == "" && op <= OTHERS {
 		err = errors.New("no table name in input")
 	}
+	if op == SHOW && table == "" {
+		err = errors.New("use command show but info is inproper")
+	}
+	// 对于show
 	return table, op, err
 }
 
