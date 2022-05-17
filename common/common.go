@@ -2,7 +2,9 @@ package common
 
 import (
 	"errors"
+	"fmt"
 	"net/rpc"
+	"os"
 	"strings"
 	"time"
 )
@@ -28,7 +30,7 @@ type CreateTableArgs struct {
 }
 
 type DownloadBackupArgs struct {
-	Ip     string
+	IP     string
 	Tables []string
 }
 

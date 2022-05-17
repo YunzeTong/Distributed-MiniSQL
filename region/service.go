@@ -8,7 +8,7 @@ import (
 )
 
 func (region *Region) Process(input *string, res *string) error {
-	log.Printf("%v: Region.Process called: %v", region.ip, *input)
+	log.Printf("%v: Region.Process called: %v", region.hostIP, *input)
 	*res = region.dbBridge.ProcessSQL(*input)
 	if *res == "invalid syntax" { // pending
 		return errors.New("syntax error")
@@ -17,7 +17,7 @@ func (region *Region) Process(input *string, res *string) error {
 }
 
 func (region *Region) RestoreDatabase(dummy *bool, res *bool) error {
-	log.Printf("%v: Region.RestoreDatabase called", region.ip)
+	log.Printf("%v: Region.RestoreDatabase called", region.hostIP)
 	tables := region.dbBridge.GetTables()
 	for _, table := range tables {
 		// TODO: refactor this block: call dbBridge.ProcessSQL instead?
@@ -30,13 +30,16 @@ func (region *Region) RestoreDatabase(dummy *bool, res *bool) error {
 }
 
 func (region *Region) DownloadBackup(args *DownloadBackupArgs, res *bool) error {
-	log.Printf("%v: Region.DownloadBackup called", region.ip)
+	log.Printf("%v: Region.DownloadBackup called", region.hostIP)
 	// TODO: refactor?
 	for _, table := range args.Tables {
 		region.dbBridge.RestoreTable(table)
 	}
-	// region.dbBridge.ftpClient.DownloadFile("catalog", args.Ip+"#table_catalog", "")
-	// region.dbBridge.ftpClient.DownloadFile("catalog", args.Ip+"#index_catalog", "")
+	prefix := args.IP + "#"
+	tabCatalogName := "table_catalog"
+	idxCatalogName := "index_catalog"
+	region.dbBridge.ftpClient.DownloadFile(prefix+tabCatalogName, tabCatalogName, true)
+	region.dbBridge.ftpClient.DownloadFile(prefix+idxCatalogName, idxCatalogName, true)
 	region.dbBridge.api.Init()
 	return nil
 }

@@ -12,12 +12,15 @@ type Bridge struct {
 	ftpClient   FtpUtils
 	interpreter Interpreter
 	api         API
-	mockTables  []string
+	hostIP      *string
+
+	mockTables []string
 }
 
-func (bridge *Bridge) Construct(serverIp string) {
+func (bridge *Bridge) Construct(masterIP string, hostIP *string) {
 	bridge.api.Init()
-	bridge.ftpClient.Construct(serverIp) // TODO: we might not need this
+	bridge.ftpClient.Construct(masterIP) // TODO: we might not need this
+	bridge.hostIP = hostIP
 	bridge.mockTables = make([]string, 0)
 }
 
@@ -25,58 +28,65 @@ func (bridge *Bridge) Construct(serverIp string) {
 func (bridge *Bridge) ProcessSQL(sql string) string {
 	res := bridge.interpreter.Interpret(sql)
 	bridge.api.Store()
-	// bridge.sendTCToFTP()
 
 	sqlInfo, resInfo := strings.Split(sql, " "), strings.Split(res, " ")
 
 	switch resInfo[0] {
 	case "-->Create":
-		// bridge.sendToFTP(resInfo[2])
 		log.Println("start to add table " + resInfo[2])
+		// bridge.sendTableFiles(resInfo[2])
 		AddUniqueToSlice(&bridge.mockTables, resInfo[2])
+		// bridge.sendCatalogFiles()
 		log.Println("finish add table " + resInfo[2])
 	case "-->Drop":
-		// bridge.deleteFromFTP(resInfo[2])
 		log.Println("start to drop table " + resInfo[2])
+		// bridge.deleteTableFiles(resInfo[2])
 		DeleteFromSlice(&bridge.mockTables, resInfo[2])
+		// bridge.sendCatalogFiles()
 		log.Println("finish drop table " + resInfo[2])
 	case "-->Insert":
 		log.Printf("%v", sqlInfo[2])
-		// bridge.deleteFromFTP(sqlInfo[2])
-		// bridge.sendToFTP(sqlInfo[2])
+		// bridge.deleteTableFiles(sqlInfo[2])
+		// bridge.sendTableFiles(sqlInfo[2])
 	case "-->Delete":
 		log.Printf("%v", sqlInfo[2])
-		// bridge.deleteFromFTP(sqlInfo[2])
-		// bridge.sendToFTP(sqlInfo[2])
+		// bridge.deleteTableFiles(sqlInfo[2])
+		// bridge.sendTableFiles(sqlInfo[2])
 	default:
 	}
 	return res
 }
 
 // again, avoid premature optimization
-func (bridge *Bridge) sendToFTP(info string) {
-	// bridge.ftpClient.UploadFile(info, "table", "")
-	// bridge.ftpClient.UploadFile(info+"_index.index", "index", "")
+func (bridge *Bridge) sendTableFiles(table string) {
+	tableFileName := table
+	tableIndexFileName := table + "_index.index"
+	bridge.ftpClient.UploadFile(tableFileName, tableFileName)
+	bridge.ftpClient.UploadFile(tableIndexFileName, tableIndexFileName)
 }
 
-func (bridge *Bridge) deleteFromFTP(info string) {
-	// bridge.ftpClient.DeleteFile(info, "table")
-	// bridge.ftpClient.DeleteFile(info+"_index.index", "index")
+func (bridge *Bridge) deleteTableFiles(table string) {
+	bridge.ftpClient.DeleteFile(table)
+	bridge.ftpClient.DeleteFile(table + "_index.index")
 }
 
-func (bridge *Bridge) sendTCToFTP() {
-	// bridge.ftpClient.UploadFile("table_catalog", "catalog", GetHostIP())
-	// bridge.ftpClient.UploadFile("index_catalog", "catalog", GetHostIP())
+func (bridge *Bridge) sendCatalogFiles() {
+	prefix := *bridge.hostIP + "#"
+	tabCatalogName := "table_catalog"
+	idxCatalogName := "index_catalog"
+	bridge.ftpClient.UploadFile(tabCatalogName, prefix+tabCatalogName)
+	bridge.ftpClient.UploadFile(idxCatalogName, prefix+idxCatalogName)
 }
 
 func (bridge *Bridge) GetTables() []string {
-	// TODO
-	return []string{}
+	return bridge.api.GetTables()
 }
 
 func (bridge *Bridge) RestoreTable(table string) {
-	DeleteLocalFile(table)
-	DeleteLocalFile(table + "_index.index")
-	// bridge.ftpClient.DownloadFile("table", table, "")
-	// bridge.ftpClient.DownloadFile("index", table+"_index.index", "")
+	tableFileName := table
+	tableIndexFileName := table + "_index.index"
+	DeleteLocalFile(tableFileName)
+	DeleteLocalFile(tableIndexFileName)
+	bridge.ftpClient.DownloadFile(tableFileName, tableFileName, false)
+	bridge.ftpClient.DownloadFile(tableIndexFileName, tableIndexFileName, false)
 }
