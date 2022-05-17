@@ -416,6 +416,7 @@ func DropIndex(indexName string) bool {
 		}
 	}
 	tmpTable.IndexNum = len(tmpTable.IndexVector)
+	Tables[tmpIndex.TableName] = tmpTable
 	delete(Indexs, indexName)
 	return true
 }

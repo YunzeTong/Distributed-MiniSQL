@@ -136,10 +136,9 @@ func parseInsert(statement string) string {
 					continue
 				}
 			} else {
-				var conditions []condition.Condition
 				var res []condition.TableRow
 				var err bool
-				res, err = recordmanager.Select(tableName, conditions)
+				res, err = recordmanager.Select(tableName, []condition.Condition{cond})
 				if err == true {
 					fmt.Println("wrong!!!")
 				}

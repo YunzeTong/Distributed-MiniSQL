@@ -20,6 +20,7 @@ func InitIndex() {
 	file, err := os.Open(FileName)
 	if err != nil {
 		fmt.Println("文件打开失败")
+		return
 	}
 	defer file.Close()
 	var lines []string
