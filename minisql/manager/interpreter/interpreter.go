@@ -743,7 +743,8 @@ func parseSelect(statement string) string {
 
 		} else { //select * from [] where [];
 			var conSet []string
-			conSet = strings.Split(conStr, " *and *")
+			reg := regexp.MustCompile(" *and *")
+			conSet = reg.Split(conStr, -1)
 			//get condition vector
 			conditions := createCondition(conSet)
 			var ret []condition.TableRow //vector
