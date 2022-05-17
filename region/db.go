@@ -55,18 +55,18 @@ func (bridge *Bridge) ProcessSQL(sql string) string {
 
 // again, avoid premature optimization
 func (bridge *Bridge) sendToFTP(info string) {
-	bridge.ftpClient.UploadFile(info, "table", "")
-	bridge.ftpClient.UploadFile(info+"_index.index", "index", "")
+	// bridge.ftpClient.UploadFile(info, "table", "")
+	// bridge.ftpClient.UploadFile(info+"_index.index", "index", "")
 }
 
 func (bridge *Bridge) deleteFromFTP(info string) {
-	bridge.ftpClient.DeleteFile(info, "table")
-	bridge.ftpClient.DeleteFile(info+"_index.index", "index")
+	// bridge.ftpClient.DeleteFile(info, "table")
+	// bridge.ftpClient.DeleteFile(info+"_index.index", "index")
 }
 
 func (bridge *Bridge) sendTCToFTP() {
-	bridge.ftpClient.UploadFile("table_catalog", "catalog", GetHostIP())
-	bridge.ftpClient.UploadFile("index_catalog", "catalog", GetHostIP())
+	// bridge.ftpClient.UploadFile("table_catalog", "catalog", GetHostIP())
+	// bridge.ftpClient.UploadFile("index_catalog", "catalog", GetHostIP())
 }
 
 func (bridge *Bridge) GetTables() []string {

@@ -5,7 +5,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/jlaffaye/ftp"
@@ -52,114 +51,124 @@ func (fu *FtpUtils) CloseConnect() {
 
 /**
 @param: ftpPath:ftp上路径，其下包含所要下载的文件
-@param: fileName: 要下载的文件名，为""则下载ftpPath下全部文件
+@param: localFileName: 要下载的文件名，为""则下载ftpPath下全部文件
 @param: savePath: file下载到本机的文件夹路径
 */
 //风神翼龙：
 //原文重载，另一个函数没有savePath参数，对应的应是catalog+IP+#+filename的形式，并下载filename
 //对于这种情况，设savePath=""来标识
-func (fu *FtpUtils) DownloadFile(ftpPath string, fileName string, savePath string) bool {
+func (fu *FtpUtils) DownloadFile(remoteFileName string, localFileName string, appendOrNot bool) bool {
 	fu.Login()
 
-	// //切换到工作目录
-	// err := fu.ftpClient.ChangeDir(ftpPath)
-	// if err != nil {
-	// 	fmt.Println("[from ftputils]ftpPath not exist")
+	//获取ftp文件
+	fetchfile, _ := fu.ftpClient.Retr(remoteFileName)
+	defer fetchfile.Close()
+
+	//本地开新文件/打开文件进行追加
+	var localfile *os.File
+	var err error
+	if appendOrNot {
+		localfile, err = os.OpenFile(localFileName, os.O_APPEND, 0666)
+		if err != nil {
+			fmt.Printf("%v", err)
+		} else {
+			fmt.Println("[hint]append ok")
+		}
+	} else {
+		localfile, err = os.OpenFile(localFileName, os.O_RDWR|os.O_CREATE, 0777)
+		if err != nil {
+			fmt.Printf("%v", err)
+		} else {
+			fmt.Println("[hint]create new file ok")
+		}
+	}
+	defer localfile.Close()
+
+	//复制文件
+	io.Copy(localfile, fetchfile)
+
+	fu.CloseConnect()
+	return true
+
+	// //获取savePath下的所有文件的entry  https://www.serv-u.com/resource/tutorial/appe-stor-stou-retr-list-mlsd-mlst-ftp-command
+	// ftpFiles, e := fu.ftpClient.List("./") //TODO:个人认为前面已经设了工作目录的话这里就直接指定当前就行了，待验证
+	// if e != nil {
+	// 	fmt.Printf("[from ftputils]ftpfiles list fail: %v\n", e)
+	// 	return false
+	// }
+	// if ftpFiles == nil {
+	// 	fmt.Println("[from ftputils]list下无文件")
 	// 	return false
 	// }
 
-	//获取savePath下的所有文件的entry  https://www.serv-u.com/resource/tutorial/appe-stor-stou-retr-list-mlsd-mlst-ftp-command
-	ftpFiles, e := fu.ftpClient.List("./") //TODO:个人认为前面已经设了工作目录的话这里就直接指定当前就行了，待验证
-	if e != nil {
-		fmt.Printf("[from ftputils]ftpfiles list fail: %v\n", e)
-		return false
-	}
-	if ftpFiles == nil {
-		fmt.Println("[from ftputils]list下无文件")
-		return false
-	}
-
-	// 该循环的含义：
-	// fileName == "": 获取ftpPath下所有非文件夹文件并下载
-	// fileName != "": 获取ftpPath下名为fileName的文件并下载
-	for _, file := range ftpFiles {
-		if fileName == "" || file.Name == fileName {
-			if file.Type.String() != "folder" { //不为folder即下载，F12查看函数签名，但又有一个link不知道是什么
-				//打开本地文件
-				var localfile *os.File
-				if savePath == "" { //原文重载的区别之处
-					localfile, _ = os.OpenFile(strings.Split(file.Name, "#")[1], os.O_RDWR|os.O_CREATE, 0777)
-				} else {
-					localfile, _ = os.OpenFile(savePath+file.Name, os.O_RDWR|os.O_CREATE, 0777)
-				}
-				defer localfile.Close()
-				//获取ftp文件
-				fetchfile, _ := fu.ftpClient.Retr(file.Name)
-				defer fetchfile.Close()
-				//复制
-				io.Copy(localfile, fetchfile)
-			}
-		}
-	}
-	fu.CloseConnect()
-	return true
+	// // 该循环的含义：
+	// // fileName == "": 获取ftpPath下所有非文件夹文件并下载
+	// // fileName != "": 获取ftpPath下名为fileName的文件并下载
+	// for _, file := range ftpFiles {
+	// 	if localFileName == "" || file.Name == localFileName {
+	// 		if file.Type.String() != "folder" { //不为folder即下载，F12查看函数签名，但又有一个link不知道是什么
+	// 			//打开本地文件
+	// 			var localfile *os.File
+	// 			if savePath == "" { //原文重载的区别之处
+	// 				localfile, _ = os.OpenFile(localFileName, os.O_RDWR|os.O_APPEND, 0777)
+	// 			} else {
+	// 				localfile, _ = os.OpenFile(savePath+file.Name, os.O_RDWR|os.O_CREATE, 0777)
+	// 			}
+	// 			defer localfile.Close()
+	// 			//获取ftp文件
+	// 			fetchfile, _ := fu.ftpClient.Retr(file.Name)
+	// 			defer fetchfile.Close()
+	// 			//复制
+	// 			io.Copy(localfile, fetchfile)
+	// 		}
+	// 	}
+	// }
+	// fu.CloseConnect()
+	// return true
 }
 
 //风神翼龙：重载二合一
-// IP为""则执行两个参数的，否则执行三个参数的，唯一区别为带IP的更改了fileName
-// fileName: 要上传的文件名
-// savePath: ftp上文件存在的文件夹路径
+// IP为""则执行两个参数的，否则执行三个参数的，唯一区别为带IP的更改了remoteFileName
+// localfileName: 要上传的文件名（包含路径），为本机上的
+// remoteFileName: ftp上文件存在的路径（包含路径和文件名），为ftp上的
 // IP: ...不知道是啥
-func (fu *FtpUtils) UploadFile(fileName string, savePath string, IP string) bool {
+func (fu *FtpUtils) UploadFile(localFileName string, remoteFileName string) bool {
 	fu.Login()
 
-	// //根据savepath建立文件夹
-	// err = fu.ftpClient.MakeDir(savePath)
-	// if err != nil {
-	// 	fmt.Printf("[from ftputils]make dir failed: %v\n", err)
-	// 	return false
-	// }
-	// //切换到当前工作目录
-	// err = fu.ftpClient.ChangeDir(savePath)
-	// if err != nil {
-	// 	fmt.Printf("[from ftputils]change dir failed: %v\n", err)
-	// 	return false
-	// }
 	//先读取本地文件，https://www.codeleading.com/article/96605360211/
-	file, err := os.Open(fileName)
+	file, err := os.Open(localFileName)
 	if err != nil {
-		fmt.Printf("[from ftputils]read file failed: %v\n", err)
+		fmt.Printf("[from ftputils]read local file failed: %v\n", err)
 		return false
 	}
 	defer file.Close()
 	//上传文件
-	err = fu.ftpClient.Stor(fileName, file)
+	err = fu.ftpClient.Stor(remoteFileName, file)
 	if err != nil {
 		fmt.Printf("[from ftputils]uploading file failed: %v\n", err)
 		return false
 	}
-	if IP != "" {
-		err = fu.ftpClient.Rename(fileName, "/catalog/"+IP+"#"+fileName)
-		if err != nil {
-			fmt.Printf("[from ftputils]rename file failed: %v\n", err)
-			return false
-		}
-	}
+	// if IP != "" {
+	// 	err = fu.ftpClient.Rename(remoteFileName, "/catalog/"+IP+"#"+remoteFileName)
+	// 	if err != nil {
+	// 		fmt.Printf("[from ftputils]rename file failed: %v\n", err)
+	// 		return false
+	// 	}
+	// }
 	fu.CloseConnect()
 	return true
 }
 
-// filePath:ftp上文件路径
-// fileName:要删的ftp上文件名
-func (fu *FtpUtils) DeleteFile(fileName string, filePath string) bool {
+// fileName:要删除的ftp上文件
+func (fu *FtpUtils) DeleteFile(remoteFileName string) bool {
 	fu.Login()
-	// fu.ftpClient.ChangeDir(filePath)
+
 	cur, err := fu.ftpClient.CurrentDir()
 	if err != nil {
-		log.Printf("current dir dir")
+		log.Printf("current dir fail")
 	}
-	log.Printf("%v", cur)
-	err = fu.ftpClient.Delete(fileName)
+	log.Printf("[hint]current path in ftp: %v", cur)
+	err = fu.ftpClient.Delete(remoteFileName)
 	if err != nil {
 		fmt.Printf("[from ftputils]delete file failed: %v\n", err)
 		return false
