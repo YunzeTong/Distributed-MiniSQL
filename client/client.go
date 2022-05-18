@@ -71,9 +71,7 @@ func (client *Client) Run() {
 		switch op {
 		case CREATE:
 			// call Master.CreateTable rpc
-			var args CreateTableArgs
-			args.Table = table
-			args.Sql = input
+			args := TableArgs{Table: table, Sql: input}
 			ip := ""
 			call, err := TimeoutRPC(client.rpcMaster.Go("Master.CreateTable", &args, &ip, nil), TIMEOUT)
 			if err != nil {
@@ -86,8 +84,9 @@ func (client *Client) Run() {
 			}
 		case DROP:
 			// call Master.DropTable rpc
+			args := TableArgs{Table: table, Sql: input}
 			dummy := false
-			call, err := TimeoutRPC(client.rpcMaster.Go("Master.DropTable", &table, &dummy, nil), TIMEOUT)
+			call, err := TimeoutRPC(client.rpcMaster.Go("Master.DropTable", &args, &dummy, nil), TIMEOUT)
 			if err != nil {
 				fmt.Println("timeout")
 			}

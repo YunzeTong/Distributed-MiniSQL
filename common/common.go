@@ -27,7 +27,7 @@ const (
 	DIR = "sql/"
 )
 
-type CreateTableArgs struct {
+type TableArgs struct {
 	Table string
 	Sql   string
 }
@@ -37,30 +37,29 @@ type DownloadBackupArgs struct {
 	Tables []string
 }
 
-func AddUniqueToSlice(pSlice *[]string, str string) {
-	exists := false
-	for _, elem := range *pSlice {
+func FindElement(pSlice *[]string, str string) int {
+	for i, elem := range *pSlice {
 		if elem == str {
-			exists = true
-			break
+			return i
 		}
 	}
-	if !exists {
+	return -1
+}
+
+func AddUniqueToSlice(pSlice *[]string, str string) {
+	if FindElement(pSlice, str) == -1 {
 		*pSlice = append(*pSlice, str)
 	}
 }
 
-func DeleteFromSlice(pSlice *[]string, str string) {
-	index := -1
-	for i, elem := range *pSlice {
-		if str == elem {
-			index = i
-			break
-		}
+func DeleteFromSlice(pSlice *[]string, str string) bool {
+	index := FindElement(pSlice, str)
+	if index == -1 {
+		return false
 	}
-
 	(*pSlice)[index] = (*pSlice)[len(*pSlice)-1]
 	*pSlice = (*pSlice)[:len(*pSlice)-1]
+	return true
 }
 
 // return self IP
