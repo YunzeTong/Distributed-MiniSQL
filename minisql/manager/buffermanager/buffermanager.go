@@ -1,6 +1,7 @@
 package buffermanager
 
 import (
+	"Distributed-MiniSQL/common"
 	"fmt"
 	"io"
 	"os"
@@ -165,7 +166,7 @@ func ReadBlockFromDisk(filename string, ofs int) int {
 	if bid == EOF {
 		return EOF
 	}
-	f, err := os.OpenFile(filename, os.O_CREATE|os.O_RDWR, 0666)
+	f, err := os.OpenFile(common.DIR+filename, os.O_CREATE|os.O_RDWR, 0666)
 	if err != nil {
 		fmt.Print(err)
 		return EOF
@@ -191,7 +192,7 @@ func ReadBlockFromDiskQuote(filename string, ofs int) *Block {
 		if bid == EOF {
 			return nil
 		}
-		f, err := os.OpenFile(filename, os.O_CREATE|os.O_RDWR, 0666)
+		f, err := os.OpenFile(common.DIR+filename, os.O_CREATE|os.O_RDWR, 0666)
 		if err != nil {
 			fmt.Print(err)
 			return nil
@@ -208,8 +209,8 @@ func ReadBlockFromDiskQuote(filename string, ofs int) *Block {
 func ReadBlockFromDisk1(filename string, ofs int, bid int) bool {
 	flag := false
 	data := make([]byte, BLOCKSIZE)
-	file, err := os.Open(filename)
-	fileinfo, _ := os.Stat(filename)
+	file, err := os.Open(common.DIR + filename)
+	fileinfo, _ := os.Stat(common.DIR + filename)
 	length := fileinfo.Size()
 	if err != nil {
 		fmt.Print(err)
@@ -248,7 +249,7 @@ func WriteBlockToDisk(bid int) bool {
 		buffer[bid].IsValid = false
 		return true
 	}
-	file, err := os.OpenFile(buffer[bid].FileName, os.O_RDWR|os.O_CREATE, 0666)
+	file, err := os.OpenFile(common.DIR+buffer[bid].FileName, os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {
 		fmt.Print(err)
 		return false

@@ -57,8 +57,8 @@ func (region *Region) deleteTableFiles(table string) {
 
 func (region *Region) sendCatalogFiles() {
 	prefix := region.hostIP + "#"
-	tabCatalogName := "table_catalog"
-	idxCatalogName := "index_catalog"
+	tabCatalogName := "table_catalog.txt"
+	idxCatalogName := "index_catalog.txt"
 	region.ftpClient.UploadFile(tabCatalogName, prefix+tabCatalogName)
 	region.ftpClient.UploadFile(idxCatalogName, prefix+idxCatalogName)
 }
@@ -72,6 +72,6 @@ func (region *Region) RestoreTable(table string) {
 	tableIndexFileName := table + "_index.index"
 	DeleteLocalFile(tableFileName)
 	DeleteLocalFile(tableIndexFileName)
-	region.ftpClient.DownloadFile(tableFileName, tableFileName, false)
-	region.ftpClient.DownloadFile(tableIndexFileName, tableIndexFileName, false)
+	region.ftpClient.DownloadFile(tableFileName, DIR+tableFileName, false)
+	region.ftpClient.DownloadFile(tableIndexFileName, DIR+tableIndexFileName, false)
 }

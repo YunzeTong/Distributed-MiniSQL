@@ -40,8 +40,8 @@ func (region *Region) DownloadBackup(args *DownloadBackupArgs, res *bool) error 
 	prefix := args.IP + "#"
 	tabCatalogName := "table_catalog"
 	idxCatalogName := "index_catalog"
-	region.ftpClient.DownloadFile(prefix+tabCatalogName, tabCatalogName, true)
-	region.ftpClient.DownloadFile(prefix+idxCatalogName, idxCatalogName, true)
+	region.ftpClient.DownloadFile(prefix+tabCatalogName, DIR+tabCatalogName, true)
+	region.ftpClient.DownloadFile(prefix+idxCatalogName, DIR+idxCatalogName, true)
 	api.Initial()
 	return nil
 }
