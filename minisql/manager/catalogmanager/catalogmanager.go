@@ -74,11 +74,11 @@ func InitTable() {
 		i = i + 4*tempAttributeNum
 		Tables[tempTableName] = *NewTable2(tempTableName, tempPrimaryKey, tempAttributeVector, tempIndexVector, tempRowNum)
 	}
-	// fmt.Println(Tables)
+	fmt.Println("表信息加载成功")
 }
 
 func InitIndex() {
-	file, err := os.Open(TableFileName)
+	file, err := os.Open(IndexFileName)
 	if err != nil {
 		fmt.Println("索引记录文件不存在")
 		return
@@ -98,10 +98,11 @@ func InitIndex() {
 		Indexs[tempIndexName] = *index.NewIndex2(tempIndexName, tempTableName, tempAttributeName, tempBlockNum, tempRootNum)
 		i += 5
 	}
+	fmt.Println("索引信息文件加载成功")
 }
 
 func StoreTable() {
-	file, err := os.OpenFile(TableFileName, os.O_WRONLY|os.O_CREATE, 0666)
+	file, err := os.OpenFile(TableFileName, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0666)
 	if err != nil {
 		fmt.Println("打开文件错误")
 		fmt.Println(err)
@@ -113,7 +114,6 @@ func StoreTable() {
 	count := 1
 	for _, v := range Tables {
 		fmt.Fprintln(w, v.TableName)
-		fmt.Println(err)
 		// fmt.Println(v.TableName)
 		// if err != nil{
 		// 	fmt.Println(err)
@@ -142,7 +142,7 @@ func StoreTable() {
 }
 
 func StoreIndex() {
-	file, err := os.OpenFile(TableFileName, os.O_WRONLY|os.O_CREATE, 0666)
+	file, err := os.OpenFile(IndexFileName, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0666)
 	if err != nil {
 		fmt.Println("打开文件错误")
 		fmt.Println(err)
@@ -263,6 +263,15 @@ func IsAttributeExist(tableName string, attributeName string) bool {
 	return false
 }
 
+func IsTableExist(tableName string) bool {
+	_, ok := Tables[tableName]
+	if ok {
+		return true
+	} else {
+		return false
+	}
+}
+
 func GetIndexName(tableName string, attribute string) string {
 	value, ok := Tables[tableName]
 	if ok {
@@ -271,9 +280,9 @@ func GetIndexName(tableName string, attribute string) string {
 				return value.IndexVector[i].IndexName
 			}
 		}
-		fmt.Printf("The attribute %s doesn't have a index\n", attribute)
+		//fmt.Printf("The attribute %s doesn't have a index\n", attribute)
 	} else {
-		fmt.Printf("The table %s doesn't exist\n", tableName)
+		//fmt.Printf("The table %s doesn't exist\n", tableName)
 	}
 	return ""
 }
@@ -407,6 +416,7 @@ func DropIndex(indexName string) bool {
 		}
 	}
 	tmpTable.IndexNum = len(tmpTable.IndexVector)
+	Tables[tmpIndex.TableName] = tmpTable
 	delete(Indexs, indexName)
 	return true
 }

@@ -54,7 +54,18 @@ func (b *Block) ReadInteger(offset int) int32 {
 	return (b0 << 24) | (b1 << 16) | (b2 << 8) | b3
 }
 
-func (b *Block) WriteInteger(offset int, value int) bool {
+//func (b *Block) ReadByte(offset)int32{}
+
+func (b *Block) WriteByte(offset int, value byte) bool {
+	if offset+1 > BLOCKSIZE {
+		return false
+	}
+	b.BlockData[offset] = value
+	b.IsDirty = true
+	return true
+}
+
+func (b *Block) WriteInteger(offset int, value int32) bool {
 	if offset+4 > BLOCKSIZE {
 		return false
 	}
@@ -74,13 +85,14 @@ func (b *Block) ReadFloat(offset int) float32 {
 
 func (b *Block) WriteFloat(offset int, value float32) bool {
 	var dat int32 = *(*int32)(unsafe.Pointer(&value))
-	return b.WriteInteger(offset, int(dat))
+	b.IsDirty = true
+	return b.WriteInteger(offset, dat)
 }
 
 func (b *Block) ReadString(offset int, length int) string {
 	var buf []byte = make([]byte, length)
 	for i := 0; i < length && (i < BLOCKSIZE-offset); i++ {
-		buf[i] = b.BlockData[offset+1]
+		buf[i] = b.BlockData[offset+i]
 	}
 	b.LRUCount++
 	return string(buf)
@@ -109,6 +121,12 @@ func (b *Block) SetBlockData() {
 var MAXBLOCKNUM int = 50
 var EOF int = -1
 var buffer []Block = make([]Block, MAXBLOCKNUM)
+
+func BufferInit() {
+	for i := 0; i < MAXBLOCKNUM; i++ {
+		buffer[i] = *NewBlock()
+	}
+}
 
 func TestInterFace() {
 	b := NewBlock()
@@ -165,26 +183,25 @@ func ReadBlockFromDiskQuote(filename string, ofs int) *Block {
 		if buffer[i].IsValid && buffer[i].FileName == filename && buffer[i].BlockOffset == ofs {
 			break
 		}
-		if i < MAXBLOCKNUM {
-			return &buffer[i]
-		} else {
-			bid := GetFreeBlockId()
-			if bid == EOF {
-				return nil
-			}
-			f, err := os.OpenFile(filename, os.O_CREATE|os.O_RDWR, 0666)
-			if err != nil {
-				fmt.Print(err)
-				return nil
-			}
-			if !ReadBlockFromDisk1(filename, ofs, bid) {
-				return nil
-			}
-			defer f.Close()
-			return &buffer[i]
-		}
 	}
-	return &buffer[i]
+	if i < MAXBLOCKNUM {
+		return &buffer[i]
+	} else {
+		bid := GetFreeBlockId()
+		if bid == EOF {
+			return nil
+		}
+		f, err := os.OpenFile(filename, os.O_CREATE|os.O_RDWR, 0666)
+		if err != nil {
+			fmt.Print(err)
+			return nil
+		}
+		if !ReadBlockFromDisk1(filename, ofs, bid) {
+			return nil
+		}
+		defer f.Close()
+		return &buffer[bid]
+	}
 }
 
 //三个变量的是disk1，2个变量的是disk
@@ -227,7 +244,7 @@ func ReadBlockFromDisk1(filename string, ofs int, bid int) bool {
 }
 
 func WriteBlockToDisk(bid int) bool {
-	if buffer[bid].IsDirty {
+	if !buffer[bid].IsDirty {
 		buffer[bid].IsValid = false
 		return true
 	}
@@ -248,6 +265,7 @@ func WriteBlockToDisk(bid int) bool {
 		return false
 	}
 	buffer[bid].IsValid = false
+	buffer[bid].IsDirty = false
 	return true
 
 }
@@ -256,7 +274,7 @@ func GetFreeBlockId() int {
 	index := EOF
 	var mincount int = 0x7FFFFFFF
 	for i := 0; i < MAXBLOCKNUM; i++ {
-		if buffer[i].IsLocked && buffer[i].LRUCount < mincount {
+		if !buffer[i].IsLocked && buffer[i].LRUCount < mincount {
 			index = i
 			mincount = buffer[i].LRUCount
 		}

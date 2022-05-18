@@ -1,7 +1,8 @@
 package catalogmanager
 
-import index "Distributed-MiniSQL/minisql/manager/commonutil"
-
+import( 
+	index "Distributed-MiniSQL/minisql/manager/commonutil"
+)
 //DataType类
 type Datatype struct {
 	NumType int // 1为char,2 为int, 3为float
