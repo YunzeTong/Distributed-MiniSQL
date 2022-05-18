@@ -3,8 +3,10 @@ package region
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
+	"path"
 	"time"
 
 	"github.com/jlaffaye/ftp"
@@ -174,4 +176,43 @@ func (fu *FtpUtils) DeleteFile(remoteFileName string, IP string) bool {
 
 	fu.CloseConnect()
 	return true
+}
+
+func (fu *FtpUtils) DownloadDir(remoteDir, localDir, ip string) {
+	// clean local sql dir
+	dir, err := ioutil.ReadDir(localDir)
+	if err != nil {
+		fmt.Println("Can't obtain files in ./sql")
+	}
+	for _, d := range dir {
+		os.RemoveAll(path.Join([]string{"sql", d.Name()}...))
+	}
+	// download everything from backup's sql dir to local sql dir
+	fu.Login(ip)
+	//切换到工作目录
+	err = fu.ftpClient.ChangeDir(remoteDir)
+	if err != nil {
+		fmt.Println("[from ftputils]ftpPath not exist")
+	}
+	//获取savePath下的所有文件的entry  https://www.serv-u.com/resource/tutorial/appe-stor-stou-retr-list-mlsd-mlst-ftp-command
+	ftpFiles, e := fu.ftpClient.List("./") //TODO:个人认为前面已经设了工作目录的话这里就直接指定当前就行了，待验证
+	if e != nil {
+		fmt.Printf("[from backup ftp]ftpfiles list fail: %v\n", e)
+	}
+	if ftpFiles == nil {
+		fmt.Println("[from backup ftp]list下无文件")
+	}
+	for _, file := range ftpFiles {
+		//打开sql文件夹里的本地文件
+		var localfile *os.File
+		localfile, _ = os.OpenFile(localDir+file.Name, os.O_RDWR|os.O_CREATE, 0777)
+		defer localfile.Close()
+		//获取ftp文件
+		fetchfile, _ := fu.ftpClient.Retr(file.Name)
+		defer fetchfile.Close()
+		//复制
+		io.Copy(localfile, fetchfile)
+
+	}
+	fu.CloseConnect()
 }
