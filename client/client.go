@@ -183,6 +183,7 @@ func (client *Client) Run() {
 // create格式默认正确写法: create table student (name varchar, id int);
 func (client *Client) preprocessInput(input string) (table string, op TableOp, err error) {
 	//初始化三个返回值
+	input = strings.Trim(input, ";")
 	table = ""
 	op = OTHERS
 	err = nil
@@ -200,6 +201,7 @@ func (client *Client) preprocessInput(input string) (table string, op TableOp, e
 	} else if words[0] == "drop" {
 		op = DROP
 		if len(words) == 3 {
+			fmt.Println("[最终可删]drop table" + words[2])
 			table = words[2]
 		}
 	} else {
