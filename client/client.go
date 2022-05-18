@@ -30,8 +30,7 @@ func (client *Client) Init(masterIP string) {
 	client.ipCache = make(map[string]string)
 	client.rpcRegionMap = make(map[string]*rpc.Client)
 
-	masterAddr := masterIP + MASTER_PORT
-	rpcMas, err := rpc.DialHTTP("tcp", masterAddr)
+	rpcMas, err := rpc.DialHTTP("tcp", masterIP+MASTER_PORT)
 	if err != nil {
 		fmt.Printf("[client]connect error: %v", err)
 	}
@@ -114,8 +113,9 @@ func (client *Client) Run() {
 			rpcRegion, ok := client.rpcRegionMap[ip]
 			if !ok {
 				fmt.Printf("region not in RPCcache, add it to map")
-				rpcRegion, err = rpc.DialHTTP("tcp", ip)
+				rpcRegion, err = rpc.DialHTTP("tcp", ip+REGION_PORT)
 				if err != nil {
+					fmt.Println(err)
 					fmt.Println("fail to connect to region: " + ip)
 					fmt.Println("IP is new but can't connect")
 					delete(client.ipCache, table)
@@ -150,7 +150,7 @@ func (client *Client) Run() {
 					break
 				}
 				// obtain newest rpcRegion and update map
-				new_rpcRegion, err := rpc.DialHTTP("tcp", new_ip)
+				new_rpcRegion, err := rpc.DialHTTP("tcp", new_ip+REGION_PORT)
 				if err != nil {
 					fmt.Printf("[client]fail to connect to region: " + ip)
 					delete(client.ipCache, table)

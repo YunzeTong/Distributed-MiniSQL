@@ -20,7 +20,7 @@ func (region *Region) Process(input *string, reply *string) error {
 	} else {
 		*reply = res
 		if region.backupIP != "" {
-			rpcBackupRegion, err := rpc.DialHTTP("tcp", region.backupIP)
+			rpcBackupRegion, err := rpc.DialHTTP("tcp", region.backupIP+REGION_PORT)
 			if err != nil {
 				fmt.Println("fail to connect to backup region: " + region.backupIP)
 			}
