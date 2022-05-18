@@ -2,6 +2,7 @@ package master
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/rpc"
 
@@ -36,6 +37,15 @@ func (master *Master) watch() {
 						backedIP := master.getBackedIP(ip)
 						client := master.regionClients[backedIP]
 						// TODO: call regionIP's RemoveBackup
+						var dummyArgs *bool
+						var dummyReply *bool
+						call, err := TimeoutRPC(client.Go("Region.RemoveBackup", &dummyArgs, &dummyReply, nil), TIMEOUT)
+						if err != nil {
+							fmt.Println("timeout")
+						}
+						if call.Error != nil {
+							fmt.Printf("remove backup ip %s failed\n", backedIP)
+						}
 					}
 				}
 			}
@@ -66,6 +76,14 @@ func (master *Master) placeBackup(backupIP string) {
 			master.backupInfo[ip] = backupIP
 			client := master.regionClients[ip]
 			// TODO: call ip's AssignBackup rpc
+			var dummyReply *bool
+			call, err := TimeoutRPC(client.Go("Region.AssignBackup", &backupIP, &dummyReply, nil), TIMEOUT)
+			if err != nil {
+				fmt.Println("timeout")
+			}
+			if call.Error != nil {
+				fmt.Printf("IP %s backup built for %s failed\n", backupIP, ip)
+			}
 			return
 		}
 	}
