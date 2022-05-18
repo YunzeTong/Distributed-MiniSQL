@@ -26,21 +26,6 @@ const NONEXIST int = -1
 
 var OPERATOR = []string{"<>", "<=", ">=", "=", "<", ">"}
 
-//main函数 line 18
-func Main() {
-	api.Initial()
-	for {
-		input, _ := bufio.NewReader(os.Stdin).ReadString('\n')
-		//input = "hwggnb!"
-		input = strings.TrimRight(input, "\r\n")
-		strInterpret(input)
-	}
-	// if err != nil {
-
-	// }
-
-}
-
 func parseShow(statement string) {
 	dataType := strings.Trim(substring(statement, "show", ""), " ")
 	if dataType == "tables" {
@@ -393,7 +378,7 @@ func printRows(tab []condition.TableRow, tabName string) string {
 //}
 
 // line 39
-func strInterpret(sql string) string {
+func Interpret(sql string) string {
 	sql = sql[0 : len(sql)-1]
 	resultValue := ""
 
@@ -887,7 +872,7 @@ func parseSqlFile(statement string) {
 		lines = append(lines, scanner.Text())
 	}
 	for i := 0; i < len(lines); i++ {
-		strInterpret(lines[i])
+		Interpret(lines[i])
 	}
 	//
 	//if ionot {
