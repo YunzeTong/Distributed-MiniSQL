@@ -11,31 +11,24 @@ import (
 	clientv3 "go.etcd.io/etcd/client/v3"
 
 	. "Distributed-MiniSQL/common"
-	api "Distributed-MiniSQL/minisql/manager/api"
-)
-
-const (
-	BUFF = 10
+	"Distributed-MiniSQL/minisql/manager/api"
 )
 
 type Region struct {
-	etcdClient   *clientv3.Client
-	masterIP     string
-	hostIP       string
-	masterClient *rpc.Client
-	ftpClient    FtpUtils
+	masterIP string
+	hostIP   string
+	backupIP string
 
-	// mockTables []string
+	etcdClient   *clientv3.Client
+	masterClient *rpc.Client
+	backupClient *rpc.Client
 }
 
-func (region *Region) Init(hostIP, masterIP string) {
+func (region *Region) Init(masterIP, hostIP string) {
 	region.masterIP = masterIP
 	region.hostIP = hostIP
 
 	api.Initial()
-	region.ftpClient.Construct(region.masterIP)
-
-	// region.mockTables = make([]string, 0)
 }
 
 func (region *Region) Run() {
@@ -74,8 +67,6 @@ func (region *Region) Run() {
 
 // https://pkg.go.dev/go.etcd.io/etcd@v3.3.27+incompatible/clientv3#Lease
 func (region *Region) stayOnline() {
-	time.Sleep(time.Second * BUFF)
-
 	for {
 		log.Printf("%v stayOnline iter", region.hostIP)
 		resp, err := region.etcdClient.Grant(context.Background(), 5)
@@ -107,11 +98,4 @@ func (region *Region) stayOnline() {
 		for _ = range ch {
 		}
 	}
-}
-
-func (region *Region) getConfig() string {
-	// TODO
-	// ip, name := "", ""
-	// return ip, name
-	return region.hostIP
 }
