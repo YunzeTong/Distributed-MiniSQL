@@ -36,6 +36,8 @@ func (master *Master) CreateTable(args *TableArgs, ip *string) error {
 func (master *Master) DropTable(args *TableArgs, dummy *bool) error {
 	log.Println("Master.DropTable called")
 	ip, ok := master.tableIP[args.Table]
+	log.Println(args.Table)
+	log.Println(master.tableIP)
 	if !ok {
 		log.Printf("no table in memory")
 		return errors.New("no table")
