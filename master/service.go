@@ -37,6 +37,7 @@ func (master *Master) DropTable(args *TableArgs, dummy *bool) error {
 	log.Println("Master.DropTable called")
 	ip, ok := master.tableIP[args.Table]
 	if !ok {
+		log.Printf("no table in memory")
 		return errors.New("no table")
 	}
 	// table must exist on corresponding region
@@ -45,9 +46,11 @@ func (master *Master) DropTable(args *TableArgs, dummy *bool) error {
 	dum := ""
 	call, err := TimeoutRPC(client.Go("Region.Process", &args.Sql, &dum, nil), TIMEOUT)
 	if err != nil {
+		log.Printf("Region.Process timeout")
 		return err // timeout
 	}
 	if call.Error != nil {
+		log.Printf("Region.Process process error")
 		return call.Error // drop err
 	}
 	master.deleteTable(args.Table, ip)

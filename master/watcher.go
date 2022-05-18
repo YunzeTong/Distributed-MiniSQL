@@ -23,6 +23,7 @@ func (master *Master) watch() {
 				ip := string(event.Kv.Key)
 				switch event.Type {
 				case mvccpb.PUT:
+					log.Printf("len: %v regionCount: %v", len(master.serverTables), master.regionCount)
 					if len(master.serverTables) < master.regionCount {
 						master.addRegion(ip)
 					} else {
@@ -67,6 +68,7 @@ func (master *Master) addRegion(ip string) {
 	master.regionClients[ip] = client
 	temp := make([]string, 0)
 	master.serverTables[ip] = &temp
+	log.Printf("server add %v", ip)
 }
 
 func (master *Master) placeBackup(backupIP string) {

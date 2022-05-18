@@ -67,6 +67,7 @@ func (master *Master) Run() {
 func (master *Master) addTable(table, ip string) {
 	master.tableIP[table] = ip
 	AddUniqueToSlice(master.serverTables[ip], table)
+	log.Println(master.serverTables[ip])
 }
 
 func (master *Master) deleteTable(table, ip string) {
