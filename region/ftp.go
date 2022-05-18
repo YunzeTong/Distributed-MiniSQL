@@ -11,15 +11,13 @@ import (
 )
 
 type FtpUtils struct {
-	hostIP    string //ftp的ip地址
 	port      string
 	username  string
 	password  string
 	ftpClient *ftp.ServerConn
 }
 
-func (fu *FtpUtils) Construct(masterIP string) {
-	fu.hostIP = masterIP
+func (fu *FtpUtils) Construct() {
 	fu.port = "21"
 	fu.username = "tyz"
 	fu.password = "tyz"
@@ -29,8 +27,8 @@ func (fu *FtpUtils) Construct(masterIP string) {
 // 现在的逻辑是Login完成了从连接到登录的两个操作，close完成了从退出登录到断连的操作，和风神翼龙一致
 // 如果再细分的话就把连接和断连单独拿出来到构造函数里面
 // 但是风神翼龙对文件的操作无一例外全都是先login再connect的，这样真的合理吗？
-func (fu *FtpUtils) Login() {
-	c, err := ftp.Dial(fu.hostIP+":"+fu.port, ftp.DialWithTimeout(5*time.Second))
+func (fu *FtpUtils) Login(IP string) {
+	c, err := ftp.Dial(IP+":"+fu.port, ftp.DialWithTimeout(5*time.Second))
 	if err != nil {
 		fmt.Printf("[from ftputils]ftp连接出现问题: %v\n", err)
 	}
@@ -57,8 +55,8 @@ func (fu *FtpUtils) CloseConnect() {
 //风神翼龙：
 //原文重载，另一个函数没有savePath参数，对应的应是catalog+IP+#+filename的形式，并下载filename
 //对于这种情况，设savePath=""来标识
-func (fu *FtpUtils) DownloadFile(remoteFileName string, localFileName string, appendOrNot bool) bool {
-	fu.Login()
+func (fu *FtpUtils) DownloadFile(remoteFileName string, localFileName string, appendOrNot bool, IP string) bool {
+	fu.Login(IP)
 
 	//获取ftp文件
 	fetchfile, _ := fu.ftpClient.Retr(remoteFileName)
@@ -132,8 +130,8 @@ func (fu *FtpUtils) DownloadFile(remoteFileName string, localFileName string, ap
 // localfileName: 要上传的文件名（包含路径），为本机上的
 // remoteFileName: ftp上文件存在的路径（包含路径和文件名），为ftp上的
 // IP: ...不知道是啥
-func (fu *FtpUtils) UploadFile(localFileName string, remoteFileName string) bool {
-	fu.Login()
+func (fu *FtpUtils) UploadFile(localFileName string, remoteFileName string, IP string) bool {
+	fu.Login(IP)
 
 	//先读取本地文件，https://www.codeleading.com/article/96605360211/
 	file, err := os.Open(localFileName)
@@ -160,8 +158,8 @@ func (fu *FtpUtils) UploadFile(localFileName string, remoteFileName string) bool
 }
 
 // fileName:要删除的ftp上文件
-func (fu *FtpUtils) DeleteFile(remoteFileName string) bool {
-	fu.Login()
+func (fu *FtpUtils) DeleteFile(remoteFileName string, IP string) bool {
+	fu.Login(IP)
 
 	cur, err := fu.ftpClient.CurrentDir()
 	if err != nil {

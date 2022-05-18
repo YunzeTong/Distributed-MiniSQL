@@ -22,11 +22,14 @@ type Region struct {
 	etcdClient   *clientv3.Client
 	masterClient *rpc.Client
 	backupClient *rpc.Client
+	fu           FtpUtils
 }
 
 func (region *Region) Init(masterIP, hostIP string) {
 	region.masterIP = masterIP
 	region.hostIP = hostIP
+
+	region.fu.Construct()
 
 	api.Initial()
 }
