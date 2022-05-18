@@ -251,7 +251,7 @@ func printRows(tab []condition.TableRow, tabName string) string {
 		result.WriteString("-")
 	}
 	fmt.Println()
-	result.WriteString("-")
+	result.WriteString("-\n")
 	for i := 0; i < len(tab); i++ {
 		var row condition.TableRow
 		row = tab[i]
