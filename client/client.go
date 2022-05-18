@@ -27,6 +27,9 @@ const (
 )
 
 func (client *Client) Init(masterIP string) {
+	client.ipCache = make(map[string]string)
+	client.rpcRegionMap = make(map[string]*rpc.Client)
+
 	masterAddr := masterIP + MASTER_PORT
 	rpcMas, err := rpc.DialHTTP("tcp", masterAddr)
 	if err != nil {
@@ -201,7 +204,7 @@ func (client *Client) preprocessInput(input string) (table string, op TableOp, e
 	} else if words[0] == "drop" {
 		op = DROP
 		if len(words) == 3 {
-			fmt.Println("[最终可删]drop table" + words[2])
+			fmt.Println("[最终可删]drop table: " + words[2])
 			table = words[2]
 		}
 	} else {
