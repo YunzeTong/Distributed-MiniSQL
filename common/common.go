@@ -24,7 +24,8 @@ const (
 	HOST_ADDR = "127.0.0.1:2379"
 
 	// minisql files
-	DIR = "sql/"
+	WORKING_DIR = "distributed-mini-sql/"
+	DIR         = "sql/"
 )
 
 type TableArgs struct {

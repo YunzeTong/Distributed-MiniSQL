@@ -65,7 +65,7 @@ func (region *Region) RemoveBackup(dummyArgs, dummyReply *bool) error {
 }
 
 func (region *Region) DownloadSnapshot(ip *string, dummyReply *bool) error {
-	region.fu.DownloadDir(DIR, DIR, *ip)
+	region.fu.DownloadDir(WORKING_DIR+DIR, DIR, *ip)
 	api.Initial()
 	return nil
 }
