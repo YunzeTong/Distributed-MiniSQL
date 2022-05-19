@@ -1,7 +1,6 @@
 package master
 
 import (
-	"log"
 	"math"
 	"net"
 	"net/http"
@@ -23,9 +22,11 @@ type Master struct {
 	etcdClient    *clientv3.Client
 	regionClients map[string]*rpc.Client
 
-	serverTables map[string]*[]string // tables stored on active servers
-	tableIP      map[string]string    // table location
-	backupInfo   map[string]string
+	serverTables map[string]*[]string // ip->tables
+	tableIP      map[string]string    // table->ip
+	indexInfo    map[string]string    // index->table
+
+	backupInfo map[string]string
 }
 
 func (master *Master) Init(regionCount int) {
@@ -34,21 +35,17 @@ func (master *Master) Init(regionCount int) {
 	master.regionClients = make(map[string]*rpc.Client)
 	master.serverTables = make(map[string]*[]string)
 	master.tableIP = make(map[string]string)
+	master.indexInfo = make(map[string]string)
+
 	master.backupInfo = make(map[string]string)
 }
 
 func (master *Master) Run() {
 	// connect to local etcd server
-	var err error
-	master.etcdClient, err = clientv3.New(clientv3.Config{
+	master.etcdClient, _ = clientv3.New(clientv3.Config{
 		Endpoints:   []string{"http://" + HOST_ADDR},
 		DialTimeout: 1 * time.Second,
 	})
-	if err != nil {
-		log.Println(err)
-	} else {
-		log.Println("etcd success")
-	}
 	defer master.etcdClient.Close()
 	go master.watch()
 
@@ -57,8 +54,6 @@ func (master *Master) Run() {
 	l, _ := net.Listen("tcp", MASTER_PORT)
 	go http.Serve(l, nil)
 
-	log.Println("rpc register")
-
 	for {
 		time.Sleep(10 * time.Second)
 	}
@@ -66,9 +61,7 @@ func (master *Master) Run() {
 
 func (master *Master) addTable(table, ip string) {
 	master.tableIP[table] = ip
-	log.Println(master.tableIP[table])
 	AddUniqueToSlice(master.serverTables[ip], table)
-	log.Println(master.serverTables[ip])
 }
 
 func (master *Master) deleteTable(table, ip string) {
@@ -76,10 +69,10 @@ func (master *Master) deleteTable(table, ip string) {
 	DeleteFromSlice(master.serverTables[ip], table)
 }
 
-func (master *Master) bestServer(excluded string) string {
+func (master *Master) bestServer() string {
 	min, res := math.MaxInt, ""
 	for ip, pTables := range master.serverTables {
-		if ip != excluded && len(*pTables) < min {
+		if len(*pTables) < min {
 			min, res = len(*pTables), ip
 		}
 	}

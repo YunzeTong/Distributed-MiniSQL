@@ -2,7 +2,6 @@ package master
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/rpc"
 
@@ -15,37 +14,43 @@ import (
 func (master *Master) watch() {
 	for {
 		watchChan := master.etcdClient.Watch(context.Background(), "", clientv3.WithPrefix())
-		log.Println("watch chan get")
-
 		for watchRes := range watchChan {
 			for _, event := range watchRes.Events {
 				log.Printf("%s %q %q\n", event.Type, event.Kv.Key, event.Kv.Value)
 				ip := string(event.Kv.Key)
 				switch event.Type {
 				case mvccpb.PUT:
-					log.Printf("len: %v regionCount: %v", len(master.serverTables), master.regionCount)
 					if len(master.serverTables) < master.regionCount {
 						master.addRegion(ip)
 					} else {
 						master.placeBackup(ip)
 					}
 				case mvccpb.DELETE:
-					backupIP, ok := master.backupInfo[ip]
+					_, ok := master.serverTables[ip]
 					if ok {
-						master.transferServerTables(ip, backupIP)
-						delete(master.serverTables, ip)
-					} else {
-						backedIP := master.getBackedIP(ip)
-						client := master.regionClients[backedIP]
-						// TODO: call regionIP's RemoveBackup
-						var dummyArgs *bool
-						var dummyReply *bool
-						call, err := TimeoutRPC(client.Go("Region.RemoveBackup", &dummyArgs, &dummyReply, nil), TIMEOUT)
-						if err != nil {
-							fmt.Println("timeout")
+						backupIP, ok := master.backupInfo[ip]
+						if ok {
+							master.transferServerTables(ip, backupIP)
+							delete(master.serverTables, ip)
+						} else {
+							log.Printf("%v has no backup", ip)
 						}
-						if call.Error != nil {
-							fmt.Printf("remove backup ip %s failed\n", backedIP)
+					} else {
+						backedIP, ok := master.getBackedIP(ip)
+						if ok {
+							client := master.regionClients[backedIP]
+							var dummyArgs, dummyReply bool
+							call, err := TimeoutRPC(client.Go("Region.RemoveBackup", &dummyArgs, &dummyReply, nil), TIMEOUT)
+							if err != nil {
+								log.Printf("%v's Region.RemoveBackup timeout", backedIP)
+							}
+							if call.Error != nil {
+								log.Printf("%v's Region.RemoveBackup failed", backedIP)
+							} else {
+								delete(master.backupInfo, backedIP)
+							}
+						} else {
+							log.Printf("%v backs nobody", ip)
 						}
 					}
 				}
@@ -75,28 +80,27 @@ func (master *Master) placeBackup(backupIP string) {
 	for ip, _ := range master.serverTables {
 		_, ok := master.backupInfo[ip]
 		if !ok {
-			master.backupInfo[ip] = backupIP
 			client := master.regionClients[ip]
-			// TODO: call ip's AssignBackup rpc
-			var dummyReply *bool
-			call, err := TimeoutRPC(client.Go("Region.AssignBackup", &backupIP, &dummyReply, nil), TIMEOUT)
+			var dummy bool
+			call, err := TimeoutRPC(client.Go("Region.AssignBackup", &backupIP, &dummy, nil), TIMEOUT)
 			if err != nil {
-				fmt.Println("timeout")
+				log.Printf("%v's Region.AssignBackup timeout", ip)
 			}
 			if call.Error != nil {
-				fmt.Printf("IP %s backup built for %s failed\n", backupIP, ip)
+				log.Printf("%v's Region.AssignBackup failed", ip)
+			} else {
+				master.backupInfo[ip] = backupIP
 			}
 			return
 		}
 	}
 }
 
-func (master *Master) getBackedIP(ip string) string {
-	var res string
+func (master *Master) getBackedIP(ip string) (string, bool) {
 	for regionIP, backupIP := range master.backupInfo {
 		if ip == backupIP {
-			res = regionIP
+			return regionIP, true
 		}
 	}
-	return res
+	return "", false
 }

@@ -1,10 +1,10 @@
 package region
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"net/rpc"
+	"strings"
 
 	. "Distributed-MiniSQL/common"
 	"Distributed-MiniSQL/minisql/manager/api"
@@ -12,11 +12,10 @@ import (
 )
 
 func (region *Region) Process(input *string, reply *string) error {
-	log.Printf("%v: Region.Process called: %v", region.hostIP, *input)
-
+	log.Printf("%v's Region.Process called: %v", region.hostIP, *input)
 	res, err := region.processSQL(*input)
 	if err != nil {
-		return errors.New("syntax error")
+		return fmt.Errorf("%v's Region.Process failed", region.hostIP)
 	} else {
 		*reply = res
 		if region.backupIP != "" {
@@ -65,6 +64,7 @@ func (region *Region) RemoveBackup(dummyArgs, dummyReply *bool) error {
 }
 
 func (region *Region) DownloadSnapshot(ip *string, dummyReply *bool) error {
+	region.RemoveBackup(nil, nil)
 	region.fu.DownloadDir(WORKING_DIR+DIR, DIR, *ip)
 	api.Initial()
 	return nil
@@ -73,9 +73,8 @@ func (region *Region) DownloadSnapshot(ip *string, dummyReply *bool) error {
 func (region *Region) processSQL(sql string) (string, error) {
 	res := interpreter.Interpret(sql)
 
-	// pending
-	if res == "fail" {
-		return "", errors.New("fail")
+	if strings.HasPrefix(res, "!") {
+		return res, fmt.Errorf("process failed")
 	}
 
 	api.Store() // pending

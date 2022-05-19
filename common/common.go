@@ -1,11 +1,10 @@
 package common
 
 import (
-	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/rpc"
 	"os"
-	"strings"
 	"time"
 )
 
@@ -30,12 +29,13 @@ const (
 
 type TableArgs struct {
 	Table string
-	Sql   string
+	SQL   string
 }
 
-type DownloadBackupArgs struct {
-	IP     string
-	Tables []string
+type IndexArgs struct {
+	Index string
+	Table string
+	SQL   string
 }
 
 func FindElement(pSlice *[]string, str string) int {
@@ -81,30 +81,17 @@ func TimeoutRPC(call *rpc.Call, ms int) (*rpc.Call, error) {
 	case res := <-call.Done:
 		return res, nil
 	case <-time.After(time.Duration(ms) * time.Millisecond):
-		return nil, errors.New("timeout")
+		return nil, fmt.Errorf("%v timeout", call.ServiceMethod)
 	}
 }
 
-// sql util
-func DropTableSQL(table string) string {
-	var builder strings.Builder
-	builder.WriteString("drop table ")
-	builder.WriteString(table)
-	builder.WriteByte(';')
-	return builder.String()
-}
-
-// debug
-func MockDropTableSQL(table string) string {
-	var builder strings.Builder
-	builder.WriteString("-->Drop dummy ")
-	builder.WriteString(table)
-	return builder.String()
-}
-
-func MockCreateTableSQL(table string) string {
-	var builder strings.Builder
-	builder.WriteString("-->Create dummy ")
-	builder.WriteString(table)
-	return builder.String()
+// fs util
+func CleanDir(localDir string) {
+	dir, err := ioutil.ReadDir(localDir)
+	if err != nil {
+		fmt.Println("Can't obtain files in dir")
+	}
+	for _, d := range dir {
+		os.RemoveAll(localDir + d.Name())
+	}
 }

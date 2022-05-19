@@ -357,7 +357,7 @@ func printRows(tab []condition.TableRow, tabName string) string {
 //			parseQuit(result)
 //			break
 //		case "execfile":
-//			parseSqlFile(result)
+//			parseSQLFile(result)
 //			break
 //		case "show":
 //			parseShow(result)
@@ -438,7 +438,7 @@ func Interpret(sql string) string {
 		resultValue += parseDelete(result)
 		break
 	case "execfile":
-		parseSqlFile(result)
+		parseSQLFile(result)
 		break
 	case "show":
 		parseShow(result)
@@ -855,7 +855,7 @@ func parseQuit(statement string) {
 	os.Exit(0)
 }
 
-func parseSqlFile(statement string) {
+func parseSQLFile(statement string) {
 	tokens := strings.Split(statement, " ")
 	if len(tokens) != 2 {
 		panic(qexception.Qexception{0, 1101, "Extra parameters in sql file execution"})

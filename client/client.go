@@ -4,7 +4,6 @@ import (
 	// "Distributed-MiniSQL/common"
 	. "Distributed-MiniSQL/common"
 	"bufio"
-	"errors"
 	"fmt"
 	"net/rpc"
 	"os"
@@ -20,10 +19,13 @@ type Client struct {
 type TableOp int
 
 const (
-	CREATE = 0
-	DROP   = 1
-	OTHERS = 2
-	SHOW   = 3
+	CREATE_TBL = 0
+	DROP_TBL   = 1
+	SHOW_TBL   = 2
+	CREATE_IDX = 3
+	DROP_IDX   = 4
+	SHOW_IDX   = 5
+	OTHERS     = 6
 )
 
 func (client *Client) Init(masterIP string) {
@@ -65,16 +67,15 @@ func (client *Client) Run() {
 			break
 		}
 
-		table, op, err := client.preprocessInput(input)
+		op, table, index, err := client.preprocessInput(input)
 		if err != nil {
 			fmt.Println("input format error")
 			continue
 		}
 		switch op {
-		case CREATE:
+		case CREATE_TBL:
 			// call Master.CreateTable rpc
-			args := TableArgs{Table: table, Sql: input}
-			ip := ""
+			args, ip := TableArgs{Table: table, SQL: input}, ""
 			call, err := TimeoutRPC(client.rpcMaster.Go("Master.CreateTable", &args, &ip, nil), TIMEOUT)
 			if err != nil {
 				fmt.Println("timeout")
@@ -84,10 +85,9 @@ func (client *Client) Run() {
 			} else {
 				fmt.Println("create table succeed, table in ip: " + ip)
 			}
-		case DROP:
+		case DROP_TBL:
 			// call Master.DropTable rpc
-			args := TableArgs{Table: table, Sql: input}
-			dummy := false
+			args, dummy := TableArgs{Table: table, SQL: input}, false
 			call, err := TimeoutRPC(client.rpcMaster.Go("Master.DropTable", &args, &dummy, nil), TIMEOUT)
 			if err != nil {
 				fmt.Println("timeout")
@@ -95,6 +95,24 @@ func (client *Client) Run() {
 			if call.Error != nil {
 				fmt.Println("[error]drop table failed")
 			}
+		case SHOW_TBL:
+			// 	showChoice := table
+			// 	fmt.Println("show " + showChoice)
+			// 	// TODO: 调用show
+			// 	//result =
+			// 	//fmt.Println(result)
+
+			// 不是上面这个意思，是把所有region的table名显示出来
+			// TODO: call Master.ShowTables and format output
+
+		case CREATE_IDX:
+			// TODO: call Master.CreateIndex
+			args, ip := IndexArgs{Index: index, Table: table, SQL: input}, ""
+		case DROP_IDX:
+			// TODO: call Master.DropIndex
+			args, dummy := IndexArgs{Index: index, SQL: input}, false
+		case SHOW_IDX:
+			// TODO: call Master.ShowIndices and format output
 		case OTHERS:
 			// by default: only ip in ipCache, rpcregion will exist in rpcmap
 			ip, ok := client.ipCache[table]
@@ -172,80 +190,75 @@ func (client *Client) Run() {
 				fmt.Println("[最终不一定非得删除]update ip: " + ip + " and add it to iptablemap")
 			}
 			fmt.Println("result:\n" + result)
-		case SHOW:
-			showChoice := table
-			fmt.Println("show " + showChoice)
-			// TODO: 调用show
-			//result =
-			//fmt.Println(result)
 		}
 
 	}
 }
 
 // create格式默认正确写法: create table student (name varchar, id int);
-func (client *Client) preprocessInput(input string) (table string, op TableOp, err error) {
-	//初始化三个返回值
-	input = strings.Trim(input, ";")
-	table = ""
-	op = OTHERS
-	err = nil
-	//空格替换
-	input = strings.ReplaceAll(input, "\\s+", " ")
-	words := strings.Split(input, " ")
-	if words[0] == "create" {
-		op = CREATE
-		if len(words) > 3 { // 因为属性在words[3]所以直接默认 > 3而不是>=3
-			table = words[2]
-			// if strings.Contains(table, "(") { // 如果被划分成了 student(name varchar, ...)
-			// 	table = table[0:strings.Index(table, "(")]
-			// }
-		}
-	} else if words[0] == "drop" {
-		op = DROP
-		if len(words) == 3 {
-			fmt.Println("[最终可删]drop table: " + words[2])
-			table = words[2]
-		}
-	} else {
-		op = OTHERS
-		if words[0] == "select" {
-			//select语句的表名放在from后面
-			for i := 0; i < len(words); i++ {
-				if words[i] == "from" && i != (len(words)-1) {
-					table = words[i+1]
-					fmt.Println("[最终可删]operation: select, table: " + table)
-					break
-				}
-			}
-		} else if words[0] == "insert" || words[0] == "delete" {
-			if len(words) >= 3 {
-				table = words[2]
-				fmt.Println("[最终可删]operation: insert or delete, table: " + table)
-			}
-		} else if words[0] == "show" {
-			op = SHOW
-			if len(words) >= 2 {
-				if words[1] == "tables" || words[1] == "indexes" {
-					table = words[1]
-				} else {
-					fmt.Println("command show doesn't offer proper hints")
-				}
-			} else {
-				fmt.Println("command show doesn't offer proper hints")
-			}
-		}
-	}
+func (client *Client) preprocessInput(input string) (TableOp, string, string, error) {
+	// //初始化三个返回值
+	// input = strings.Trim(input, ";")
+	// table = ""
+	// op = OTHERS
+	// err = nil
+	// //空格替换
+	// input = strings.ReplaceAll(input, "\\s+", " ")
+	// words := strings.Split(input, " ")
+	// if words[0] == "create" {
+	// 	op = CREATE
+	// 	if len(words) > 3 { // 因为属性在words[3]所以直接默认 > 3而不是>=3
+	// 		table = words[2]
+	// 		// if strings.Contains(table, "(") { // 如果被划分成了 student(name varchar, ...)
+	// 		// 	table = table[0:strings.Index(table, "(")]
+	// 		// }
+	// 	}
+	// } else if words[0] == "drop" {
+	// 	op = DROP
+	// 	if len(words) == 3 {
+	// 		fmt.Println("[最终可删]drop table: " + words[2])
+	// 		table = words[2]
+	// 	}
+	// } else {
+	// 	op = OTHERS
+	// 	if words[0] == "select" {
+	// 		//select语句的表名放在from后面
+	// 		for i := 0; i < len(words); i++ {
+	// 			if words[i] == "from" && i != (len(words)-1) {
+	// 				table = words[i+1]
+	// 				fmt.Println("[最终可删]operation: select, table: " + table)
+	// 				break
+	// 			}
+	// 		}
+	// 	} else if words[0] == "insert" || words[0] == "delete" {
+	// 		if len(words) >= 3 {
+	// 			table = words[2]
+	// 			fmt.Println("[最终可删]operation: insert or delete, table: " + table)
+	// 		}
+	// 	} else if words[0] == "show" {
+	// 		op = SHOW
+	// 		if len(words) >= 2 {
+	// 			if words[1] == "tables" || words[1] == "indexes" {
+	// 				table = words[1]
+	// 			} else {
+	// 				fmt.Println("command show doesn't offer proper hints")
+	// 			}
+	// 		} else {
+	// 			fmt.Println("command show doesn't offer proper hints")
+	// 		}
+	// 	}
+	// }
 
-	// 只要table仍为""，说明没拿到表名
-	if table == "" && op <= OTHERS {
-		err = errors.New("no table name in input")
-	}
-	if op == SHOW && table == "" {
-		err = errors.New("use command show but info is inproper")
-	}
-	// 对于show
-	return table, op, err
+	// // 只要table仍为""，说明没拿到表名
+	// if table == "" && op <= OTHERS {
+	// 	err = errors.New("no table name in input")
+	// }
+	// if op == SHOW && table == "" {
+	// 	err = errors.New("use command show but info is inproper")
+	// }
+	// // 对于show
+	// return table, op, err
+	return OTHERS, "", "", nil
 }
 
 //这里目前还没有考虑没有查到ip的情况

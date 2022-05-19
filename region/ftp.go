@@ -3,13 +3,13 @@ package region
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
-	"path"
 	"time"
 
 	"github.com/jlaffaye/ftp"
+
+	. "Distributed-MiniSQL/common"
 )
 
 type FtpUtils struct {
@@ -180,17 +180,11 @@ func (fu *FtpUtils) DeleteFile(remoteFileName string, IP string) bool {
 
 func (fu *FtpUtils) DownloadDir(remoteDir, localDir, ip string) {
 	// clean local sql dir
-	dir, err := ioutil.ReadDir(localDir)
-	if err != nil {
-		fmt.Println("Can't obtain files in ./sql")
-	}
-	for _, d := range dir {
-		os.RemoveAll(path.Join([]string{"sql", d.Name()}...))
-	}
+	CleanDir(localDir)
 	// download everything from backup's sql dir to local sql dir
 	fu.Login(ip)
 	//切换到工作目录
-	err = fu.ftpClient.ChangeDir(remoteDir)
+	err := fu.ftpClient.ChangeDir(remoteDir)
 	if err != nil {
 		fmt.Println("[from ftputils]ftpPath not exist")
 	}
