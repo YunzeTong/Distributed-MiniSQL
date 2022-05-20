@@ -199,10 +199,19 @@ func (fu *FtpUtils) DownloadDir(remoteDir, localDir, ip string) {
 	for _, file := range ftpFiles {
 		//打开sql文件夹里的本地文件
 		var localfile *os.File
-		localfile, _ = os.OpenFile(localDir+file.Name, os.O_RDWR|os.O_CREATE, 0777)
+		localfile, err = os.OpenFile(localDir+file.Name, os.O_RDWR|os.O_CREATE, 0777)
+		if err == nil {
+			log.Printf("localfile's name: %v", localfile.Name())
+		} else {
+			log.Printf("%v", err)
+		}
 		defer localfile.Close()
 		//获取ftp文件
-		fetchfile, _ := fu.ftpClient.Retr(file.Name)
+		log.Printf("file.name %v", file.Name)
+		fetchfile, ferr := fu.ftpClient.Retr(file.Name)
+		if ferr != nil {
+			log.Printf("remote file's name: %v", fetchfile)
+		}
 		defer fetchfile.Close()
 		//复制
 		io.Copy(localfile, fetchfile)
