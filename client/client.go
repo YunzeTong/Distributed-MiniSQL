@@ -70,8 +70,7 @@ func (client *Client) Run() {
 
 		op, table, index, err := client.preprocessInput(input)
 		if err != nil {
-			fmt.Println(err)
-			fmt.Println("input format error")
+			fmt.Printf("[input format error] %v\n", err)
 			continue
 		}
 		switch op {
@@ -247,13 +246,14 @@ func (client *Client) Run() {
 // create格式默认正确写法: create table student (name varchar, id int);
 
 func (client *Client) preprocessInput(input string) (TableOp, string, string, error) {
-	//初始化四个返回值
 	input = strings.Trim(input, ";")
+	//初始化四个返回值
 	table := ""
 	index := ""
 	var op TableOp
 	op = OTHERS
 	var err error
+	err = nil
 	//空格替换
 	input = strings.ReplaceAll(input, "\\s+", " ")
 	words := strings.Split(input, " ")
@@ -289,51 +289,59 @@ func (client *Client) preprocessInput(input string) (TableOp, string, string, er
 		}
 		return op, table, index, err
 	} else if words[0] == "drop" {
-		// 	op = DROP
-		// 	if len(words) == 3 {
-		// 		fmt.Println("[最终可删]drop table: " + words[2])
-		// 		table = words[2]
-		// 	}
+		if len(words) == 3 {
+			if words[1] == "table" {
+				op = DROP_TBL
+				table = words[2]
+			} else if words[1] == "index" {
+				op = DROP_IDX
+				index = words[2]
+			} else {
+				err = errors.New("please drop table or index")
+			}
+		} else {
+			err = errors.New("number of words false in drop")
+		}
+		return op, table, index, err
+	} else if words[0] == "show" {
+		if len(words) == 2 {
+			if words[1] == "tables" {
+				op = SHOW_TBL
+			} else if words[1] == "indexes" {
+				op = SHOW_IDX
+			} else {
+				err = errors.New("show command only specify indexes/tables")
+			}
+			return op, table, index, err
+		} else {
+			err = errors.New("show command only need to specify indexes/tables")
+		}
 	} else {
-		// 	op = OTHERS
-		// 	if words[0] == "select" {
-		// 		//select语句的表名放在from后面
-		// 		for i := 0; i < len(words); i++ {
-		// 			if words[i] == "from" && i != (len(words)-1) {
-		// 				table = words[i+1]
-		// 				fmt.Println("[最终可删]operation: select, table: " + table)
-		// 				break
-		// 			}
-		// 		}
-		// 	} else if words[0] == "insert" || words[0] == "delete" {
-		// 		if len(words) >= 3 {
-		// 			table = words[2]
-		// 			fmt.Println("[最终可删]operation: insert or delete, table: " + table)
-		// 		}
-		// 	} else if words[0] == "show" {
-		// 		op = SHOW
-		// 		if len(words) >= 2 {
-		// 			if words[1] == "tables" || words[1] == "indexes" {
-		// 				table = words[1]
-		// 			} else {
-		// 				fmt.Println("command show doesn't offer proper hints")
-		// 			}
-		// 		} else {
-		// 			fmt.Println("command show doesn't offer proper hints")
-		// 		}
-		// 	}
+		op = OTHERS
+		if words[0] == "select" {
+			//select语句的表名放在from后面
+			for i := 0; i < len(words); i++ {
+				if words[i] == "from" && i != (len(words)-1) {
+					table = words[i+1]
+					fmt.Println("[最终可删]operation: select, table: " + table)
+					break
+				}
+			}
+		} else if words[0] == "insert" || words[0] == "delete" {
+			if len(words) >= 3 {
+				table = words[2]
+				fmt.Println("[最终可删]operation: insert or delete, table: " + table)
+			}
+		} else {
+			err = errors.New("can't recoginize your command")
+		}
 	}
 
-	// // 只要table仍为""，说明没拿到表名
-	// if table == "" && op <= OTHERS {
-	// 	err = errors.New("no table name in input")
-	// }
-	// if op == SHOW && table == "" {
-	// 	err = errors.New("use command show but info is inproper")
-	// }
-	// // 对于show
-	// return table, op, err
-	return OTHERS, "", "", nil
+	// 只要table仍为""，说明没拿到表名
+	if table == "" && op == OTHERS && err == nil {
+		err = errors.New("no table name in input")
+	}
+	return op, table, index, err
 }
 
 //这里目前还没有考虑没有查到ip的情况
