@@ -41,6 +41,7 @@ func (master *Master) watch() {
 							log.Printf("%v has no backup", ip)
 						}
 						delete(master.serverTables, ip)
+						delete(master.backupInfo, ip)
 					} else {
 						backedIP, ok := master.getBackedIP(ip)
 						if ok {
