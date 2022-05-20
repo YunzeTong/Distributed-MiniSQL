@@ -101,8 +101,8 @@ func (client *Client) Run() {
 			// TODO: call Master.ShowTables and format output
 			fmt.Println("show all the tables in region")
 			var dummyArgs bool
-			var tables *[]string
-			*tables = make([]string, 0)
+			var tables []string
+			// tables = make([]string, 0)
 			call, err := TimeoutRPC(client.rpcMaster.Go("Master.ShowTables", &dummyArgs, &tables, nil), TIMEOUT)
 			if err != nil {
 				fmt.Println("timeout")
@@ -111,7 +111,7 @@ func (client *Client) Run() {
 				fmt.Println("[error]show tables failed")
 			} else {
 				fmt.Println("tables in region:\n---------------")
-				for _, table := range *tables {
+				for _, table := range tables {
 					fmt.Printf("|  %v  |\n", table)
 				}
 				fmt.Println("---------------")
@@ -146,8 +146,8 @@ func (client *Client) Run() {
 			// TODO: call Master.ShowIndices and format output
 			fmt.Println("show all the indexes in region")
 			var dummyArgs bool
-			var indices *map[string]string
-			*indices = make(map[string]string)
+			var indices map[string]string
+			// indices = make(map[string]string)
 			call, err := TimeoutRPC(client.rpcMaster.Go("Master.ShowIndices", &dummyArgs, &indices, nil), TIMEOUT)
 			if err != nil {
 				fmt.Println("timeout")
@@ -156,7 +156,7 @@ func (client *Client) Run() {
 				fmt.Println("[error]show indices failed")
 			} else {
 				fmt.Println("indices in region:\n|  index  |  table  |")
-				for index, table := range *indices {
+				for index, table := range indices {
 					fmt.Printf("|  %v  |  %v  |\n", index, table)
 				}
 				fmt.Println("---------------")
