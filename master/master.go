@@ -70,6 +70,18 @@ func (master *Master) deleteTable(table, ip string) {
 	DeleteFromSlice(master.serverTables[ip], table)
 }
 
+func (master *Master) deleteTableIndices(table string) {
+	targets := make([]string, 0)
+	for idx, tbl := range master.indexInfo {
+		if tbl == table {
+			targets = append(targets, idx)
+		}
+	}
+	for _, idx := range targets {
+		delete(master.indexInfo, idx)
+	}
+}
+
 func (master *Master) bestServer() string {
 	min, res := math.MaxInt, ""
 	for ip, pTables := range master.serverTables {
