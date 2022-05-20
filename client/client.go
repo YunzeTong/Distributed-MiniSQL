@@ -4,6 +4,7 @@ import (
 	// "Distributed-MiniSQL/common"
 	. "Distributed-MiniSQL/common"
 	"bufio"
+	"errors"
 	"fmt"
 	"net/rpc"
 	"os"
@@ -69,6 +70,7 @@ func (client *Client) Run() {
 
 		op, table, index, err := client.preprocessInput(input)
 		if err != nil {
+			fmt.Println(err)
 			fmt.Println("input format error")
 			continue
 		}
@@ -245,57 +247,82 @@ func (client *Client) Run() {
 // create格式默认正确写法: create table student (name varchar, id int);
 
 func (client *Client) preprocessInput(input string) (TableOp, string, string, error) {
-	// //初始化三个返回值
-	// input = strings.Trim(input, ";")
-	// table = ""
-	// op = OTHERS
-	// err = nil
-	// //空格替换
-	// input = strings.ReplaceAll(input, "\\s+", " ")
-	// words := strings.Split(input, " ")
-	// if words[0] == "create" {
-	// 	op = CREATE
-	// 	if len(words) > 3 { // 因为属性在words[3]所以直接默认 > 3而不是>=3
-	// 		table = words[2]
-	// 		// if strings.Contains(table, "(") { // 如果被划分成了 student(name varchar, ...)
-	// 		// 	table = table[0:strings.Index(table, "(")]
-	// 		// }
-	// 	}
-	// } else if words[0] == "drop" {
-	// 	op = DROP
-	// 	if len(words) == 3 {
-	// 		fmt.Println("[最终可删]drop table: " + words[2])
-	// 		table = words[2]
-	// 	}
-	// } else {
-	// 	op = OTHERS
-	// 	if words[0] == "select" {
-	// 		//select语句的表名放在from后面
-	// 		for i := 0; i < len(words); i++ {
-	// 			if words[i] == "from" && i != (len(words)-1) {
-	// 				table = words[i+1]
-	// 				fmt.Println("[最终可删]operation: select, table: " + table)
-	// 				break
-	// 			}
-	// 		}
-	// 	} else if words[0] == "insert" || words[0] == "delete" {
-	// 		if len(words) >= 3 {
-	// 			table = words[2]
-	// 			fmt.Println("[最终可删]operation: insert or delete, table: " + table)
-	// 		}
-	// 	} else if words[0] == "show" {
-	// 		op = SHOW
-	// 		if len(words) >= 2 {
-	// 			if words[1] == "tables" || words[1] == "indexes" {
-	// 				table = words[1]
-	// 			} else {
-	// 				fmt.Println("command show doesn't offer proper hints")
-	// 			}
-	// 		} else {
-	// 			fmt.Println("command show doesn't offer proper hints")
-	// 		}
-	// 	}
-	// }
+	//初始化四个返回值
+	input = strings.Trim(input, ";")
+	table := ""
+	index := ""
+	var op TableOp
+	op = OTHERS
+	var err error
+	//空格替换
+	input = strings.ReplaceAll(input, "\\s+", " ")
+	words := strings.Split(input, " ")
+	if words[0] == "create" {
+		if len(words) < 3 {
+			//无论哪一种create都必须要有3个及以上word
+			err = errors.New("lack of input in create operation")
+			return op, table, index, err
+		}
+
+		if words[1] == "table" {
+			op = CREATE_TBL
+			table = words[2]
+			if strings.Contains(table, "(") { // 如果被划分成了 student(name varchar, ...)
+				table = table[0:strings.Index(table, "(")]
+			}
+			fmt.Println("[最终可删除]table:" + table)
+		} else if words[1] == "index" {
+			op = CREATE_IDX
+			if len(words) < 5 {
+				err = errors.New("lack of words in create index")
+				return op, table, index, err
+			}
+			index = words[2]
+			fmt.Println("[最终可删除]index:" + index)
+			table = words[4]
+			if strings.Contains(table, "(") { // 如果被划分成了 student(name)
+				table = table[0:strings.Index(table, "(")]
+			}
+			fmt.Println("[最终可删除]table:" + table)
+		} else {
+			err = errors.New("the type you create can't be recognized")
+		}
+		return op, table, index, err
+	} else if words[0] == "drop" {
+		// 	op = DROP
+		// 	if len(words) == 3 {
+		// 		fmt.Println("[最终可删]drop table: " + words[2])
+		// 		table = words[2]
+		// 	}
+	} else {
+		// 	op = OTHERS
+		// 	if words[0] == "select" {
+		// 		//select语句的表名放在from后面
+		// 		for i := 0; i < len(words); i++ {
+		// 			if words[i] == "from" && i != (len(words)-1) {
+		// 				table = words[i+1]
+		// 				fmt.Println("[最终可删]operation: select, table: " + table)
+		// 				break
+		// 			}
+		// 		}
+		// 	} else if words[0] == "insert" || words[0] == "delete" {
+		// 		if len(words) >= 3 {
+		// 			table = words[2]
+		// 			fmt.Println("[最终可删]operation: insert or delete, table: " + table)
+		// 		}
+		// 	} else if words[0] == "show" {
+		// 		op = SHOW
+		// 		if len(words) >= 2 {
+		// 			if words[1] == "tables" || words[1] == "indexes" {
+		// 				table = words[1]
+		// 			} else {
+		// 				fmt.Println("command show doesn't offer proper hints")
+		// 			}
+		// 		} else {
+		// 			fmt.Println("command show doesn't offer proper hints")
+		// 		}
+		// 	}
+	}
 
 	// // 只要table仍为""，说明没拿到表名
 	// if table == "" && op <= OTHERS {
