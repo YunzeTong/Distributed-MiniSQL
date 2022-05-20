@@ -31,10 +31,10 @@ func (master *Master) watch() {
 						backupIP, ok := master.backupInfo[ip]
 						if ok {
 							master.transferServerTables(ip, backupIP)
-							delete(master.serverTables, ip)
 						} else {
 							log.Printf("%v has no backup", ip)
 						}
+						delete(master.serverTables, ip)
 					} else {
 						backedIP, ok := master.getBackedIP(ip)
 						if ok {
