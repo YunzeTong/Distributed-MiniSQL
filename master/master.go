@@ -1,6 +1,7 @@
 package master
 
 import (
+	"log"
 	"math"
 	"net"
 	"net/http"
@@ -85,4 +86,5 @@ func (master *Master) transferServerTables(src, dst string) {
 		master.tableIP[table] = dst
 	}
 	master.serverTables[dst] = pTables
+	log.Printf("transferred %v's table to %v", src, dst)
 }
