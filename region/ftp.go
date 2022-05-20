@@ -197,9 +197,18 @@ func (fu *FtpUtils) DownloadDir(remoteDir, localDir, ip string) {
 		fmt.Println("[from backup ftp]list下无文件")
 	}
 	for _, file := range ftpFiles {
+		//获取远程文件
+		fetchfile, ferr := fu.ftpClient.Retr(file.Name)
+		if ferr != nil {
+			log.Printf("Retr err: %v", ferr)
+		} else {
+			log.Printf("remote file's name: %v", fetchfile)
+		}
+		defer fetchfile.Close()
 		//打开sql文件夹里的本地文件
 		var localfile *os.File
-		localfile, err = os.OpenFile(localDir+file.Name, os.O_RDWR|os.O_CREATE, 0777)
+		localfile, err = os.Create(localDir + file.Name)
+		// localfile, err = os.OpenFile(localDir+file.Name, os.O_RDWR|os.O_CREATE, 0777)
 		if err == nil {
 			log.Printf("localfile's name: %v", localfile.Name())
 		} else {
@@ -208,14 +217,19 @@ func (fu *FtpUtils) DownloadDir(remoteDir, localDir, ip string) {
 		defer localfile.Close()
 		//获取ftp文件
 		log.Printf("file.name %v", file.Name)
-		fetchfile, ferr := fu.ftpClient.Retr(file.Name)
-		if ferr != nil {
-			log.Printf("remote file's name: %v", fetchfile)
+
+		if file.Name == "student" || file.Name == "student_index.index" {
+			continue
 		}
-		defer fetchfile.Close()
 		//复制
 		io.Copy(localfile, fetchfile)
-
+		//fu.ftpClient.ChangeDirToParent()
+		// currentPath, e := fu.ftpClient.CurrentDir()
+		// if e != nil {
+		// 	log.Printf("%v", e)
+		// } else {
+		// 	log.Printf("currentpath: %v", currentPath)
+		// }
 	}
 	fu.CloseConnect()
 }

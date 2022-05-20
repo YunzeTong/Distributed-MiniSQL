@@ -20,22 +20,23 @@ func (master *Master) watch() {
 				ip := string(event.Kv.Key)
 				switch event.Type {
 				case mvccpb.PUT:
+					client, err := rpc.DialHTTP("tcp", ip+REGION_PORT)
+					if err != nil {
+						log.Printf("dial error: %v", err)
+					}
+					master.regionClients[ip] = client
 					if len(master.serverTables) < master.regionCount {
 						master.addRegion(ip)
 					} else {
 						master.placeBackup(ip)
 					}
 				case mvccpb.DELETE:
+					master.regionClients[ip].Close()
 					_, ok := master.serverTables[ip]
 					if ok {
 						backupIP, ok := master.backupInfo[ip]
 						if ok {
 							master.transferServerTables(ip, backupIP)
-							client, err := rpc.DialHTTP("tcp", backupIP+REGION_PORT)
-							if err != nil {
-								log.Printf("dial error: %v", err)
-							}
-							master.regionClients[backupIP] = client
 						} else {
 							log.Printf("%v has no backup", ip)
 						}
@@ -60,35 +61,22 @@ func (master *Master) watch() {
 					}
 				}
 			}
-
 			log.Println("watch chan closed")
 		}
 	}
 }
 
 func (master *Master) addRegion(ip string) {
-	_, ok := master.regionClients[ip]
-	if ok {
-		master.regionClients[ip].Close()
-	}
-	client, err := rpc.DialHTTP("tcp", ip+REGION_PORT)
-	if err != nil {
-		log.Printf("dial error: %v", err)
-	}
-	master.regionClients[ip] = client
 	temp := make([]string, 0)
 	master.serverTables[ip] = &temp
 	log.Printf("server add %v", ip)
 }
 
 func (master *Master) placeBackup(backupIP string) {
-	for ip, _ := range master.serverTables {
+	for ip := range master.serverTables {
 		_, ok := master.backupInfo[ip]
 		if !ok {
-			client, exist := master.regionClients[ip]
-			if !exist {
-				log.Printf("no rpc client for %v", ip)
-			}
+			client := master.regionClients[ip]
 			log.Printf("backup ip: %v", backupIP)
 			var dummy bool
 			call, err := TimeoutRPC(client.Go("Region.AssignBackup", &backupIP, &dummy, nil), TIMEOUT)
