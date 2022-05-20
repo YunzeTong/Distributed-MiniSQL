@@ -2,4 +2,4 @@
 
 source scripts/setup.sh
 
-go run main/mmaster.go 2
+go run main/mclient.go $HOST_0
