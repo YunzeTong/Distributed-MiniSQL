@@ -118,10 +118,29 @@ func (client *Client) Run() {
 
 		case CREATE_IDX:
 			// TODO: call Master.CreateIndex
+			// TODO: 返回的ip是要update tableip map吗？
 			args, ip := IndexArgs{Index: index, Table: table, SQL: input}, ""
+			call, err := TimeoutRPC(client.rpcMaster.Go("Master.CreateIndex", &args, &ip, nil), TIMEOUT)
+			if err != nil {
+				fmt.Println("timeout")
+			}
+			if call.Error != nil {
+				fmt.Println("[error]create indexes failed")
+			} else {
+				fmt.Printf("create index succeed on table %v in %v\n", table, ip)
+			}
 		case DROP_IDX:
 			// TODO: call Master.DropIndex
 			args, dummy := IndexArgs{Index: index, SQL: input}, false
+			call, err := TimeoutRPC(client.rpcMaster.Go("Master.DropIndex", &args, &dummy, nil), TIMEOUT)
+			if err != nil {
+				fmt.Println("timeout")
+			}
+			if call.Error != nil {
+				fmt.Println("[error]drop indexes failed")
+			} else {
+				fmt.Println("drop index succeed")
+			}
 		case SHOW_IDX:
 			// TODO: call Master.ShowIndices and format output
 			fmt.Println("show all the indexes in region")
