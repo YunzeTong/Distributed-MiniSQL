@@ -31,6 +31,11 @@ func (master *Master) watch() {
 						backupIP, ok := master.backupInfo[ip]
 						if ok {
 							master.transferServerTables(ip, backupIP)
+							client, err := rpc.DialHTTP("tcp", backupIP+REGION_PORT)
+							if err != nil {
+								log.Printf("dial error: %v", err)
+							}
+							master.regionClients[backupIP] = client
 						} else {
 							log.Printf("%v has no backup", ip)
 						}
@@ -80,7 +85,11 @@ func (master *Master) placeBackup(backupIP string) {
 	for ip, _ := range master.serverTables {
 		_, ok := master.backupInfo[ip]
 		if !ok {
-			client := master.regionClients[ip]
+			client, exist := master.regionClients[ip]
+			if !exist {
+				log.Printf("no rpc client for %v", ip)
+			}
+			log.Printf("backup ip: %v", backupIP)
 			var dummy bool
 			call, err := TimeoutRPC(client.Go("Region.AssignBackup", &backupIP, &dummy, nil), TIMEOUT)
 			if err != nil {
