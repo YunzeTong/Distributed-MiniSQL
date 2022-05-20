@@ -30,7 +30,7 @@ func (fu *FtpUtils) Construct() {
 // 如果再细分的话就把连接和断连单独拿出来到构造函数里面
 // 但是风神翼龙对文件的操作无一例外全都是先login再connect的，这样真的合理吗？
 func (fu *FtpUtils) Login(IP string) {
-	c, err := ftp.Dial(IP+":"+fu.port, ftp.DialWithTimeout(5*time.Second))
+	c, err := ftp.Dial(IP+":"+fu.port, ftp.DialWithTimeout(5*time.Second), ftp.DialWithDisabledEPSV(true))
 	if err != nil {
 		fmt.Printf("[from ftputils]ftp连接出现问题: %v\n", err)
 	}
@@ -197,14 +197,12 @@ func (fu *FtpUtils) DownloadDir(remoteDir, localDir, ip string) {
 		fmt.Println("[from backup ftp]list下无文件")
 	}
 	for _, file := range ftpFiles {
+		log.Printf("------------")
 		//获取远程文件
 		fetchfile, ferr := fu.ftpClient.Retr(file.Name)
 		if ferr != nil {
 			log.Printf("Retr err: %v", ferr)
-		} else {
-			log.Printf("remote file's name: %v", fetchfile)
 		}
-		defer fetchfile.Close()
 		//打开sql文件夹里的本地文件
 		var localfile *os.File
 		localfile, err = os.Create(localDir + file.Name)
@@ -230,6 +228,7 @@ func (fu *FtpUtils) DownloadDir(remoteDir, localDir, ip string) {
 		// } else {
 		// 	log.Printf("currentpath: %v", currentPath)
 		// }
+		fetchfile.Close()
 	}
 	fu.CloseConnect()
 }
