@@ -232,7 +232,7 @@ func (client *Client) Run() {
 					fmt.Println("can't obatin result, maybe input is error")
 					break
 				}
-				fmt.Println("result:\n" + result)
+				// fmt.Println("result:\n" + result)
 				client.ipCache[table] = new_ip
 				client.rpcRegionMap[new_ip] = new_rpcRegion
 				fmt.Println("[最终不一定非得删除]update ip: " + ip + " and add " + new_ip + " to iptablemap")
