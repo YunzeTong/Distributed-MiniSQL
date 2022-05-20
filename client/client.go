@@ -63,7 +63,7 @@ func (client *Client) Run() {
 		fmt.Println("[风神翼龙test in loop]input: " + input)
 
 		if input == "quit" {
-			//TODO 直接退出
+			//客户端直接退出
 			break
 		}
 
@@ -96,14 +96,25 @@ func (client *Client) Run() {
 				fmt.Println("[error]drop table failed")
 			}
 		case SHOW_TBL:
-			// 	showChoice := table
-			// 	fmt.Println("show " + showChoice)
-			// 	// TODO: 调用show
-			// 	//result =
-			// 	//fmt.Println(result)
-
-			// 不是上面这个意思，是把所有region的table名显示出来
+			// 把所有region的table名显示出来
 			// TODO: call Master.ShowTables and format output
+			fmt.Println("show all the tables in region")
+			var dummyArgs bool
+			var tables *[]string
+			*tables = make([]string, 0)
+			call, err := TimeoutRPC(client.rpcMaster.Go("Master.ShowTables", &dummyArgs, &tables, nil), TIMEOUT)
+			if err != nil {
+				fmt.Println("timeout")
+			}
+			if call.Error != nil {
+				fmt.Println("[error]show tables failed")
+			} else {
+				fmt.Println("tables in region:\n---------------")
+				for _, table := range *tables {
+					fmt.Printf("|  %v  |\n", table)
+				}
+				fmt.Println("---------------")
+			}
 
 		case CREATE_IDX:
 			// TODO: call Master.CreateIndex
@@ -113,6 +124,23 @@ func (client *Client) Run() {
 			args, dummy := IndexArgs{Index: index, SQL: input}, false
 		case SHOW_IDX:
 			// TODO: call Master.ShowIndices and format output
+			fmt.Println("show all the indexes in region")
+			var dummyArgs bool
+			var indices *map[string]string
+			*indices = make(map[string]string)
+			call, err := TimeoutRPC(client.rpcMaster.Go("Master.ShowIndices", &dummyArgs, &indices, nil), TIMEOUT)
+			if err != nil {
+				fmt.Println("timeout")
+			}
+			if call.Error != nil {
+				fmt.Println("[error]show indices failed")
+			} else {
+				fmt.Println("indices in region:\n|  index  |  table  |")
+				for index, table := range *indices {
+					fmt.Printf("|  %v  |  %v  |\n", index, table)
+				}
+				fmt.Println("---------------")
+			}
 		case OTHERS:
 			// by default: only ip in ipCache, rpcregion will exist in rpcmap
 			ip, ok := client.ipCache[table]
@@ -196,6 +224,7 @@ func (client *Client) Run() {
 }
 
 // create格式默认正确写法: create table student (name varchar, id int);
+
 func (client *Client) preprocessInput(input string) (TableOp, string, string, error) {
 	// //初始化三个返回值
 	// input = strings.Trim(input, ";")
