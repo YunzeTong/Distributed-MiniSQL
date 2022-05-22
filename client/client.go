@@ -52,7 +52,7 @@ func (client *Client) Run() {
 			input = commands[indexOfCommand]
 			input = strings.Trim(input, " ")
 			indexOfCommand += 1
-			if indexOfCommand == len(commands)-1 {
+			if indexOfCommand == len(commands) { // come to the final line, return to input by keyboard mode
 				indexOfCommand = 0
 				execFileMode = false
 				commands = commands[0:0]
@@ -76,7 +76,7 @@ func (client *Client) Run() {
 			input = strings.Trim(input, " ")
 
 			if input == "quit" {
-				//客户端直接退出
+				// client exit directly
 				fmt.Println("new message>>> You choose to quit, bye!")
 				break
 			} else {
@@ -97,7 +97,7 @@ func (client *Client) Run() {
 						indexOfCommand = 0
 						fmt.Println("HINT>>> start to execute command in file")
 					}
-					continue
+					continue // no matter execfile or or command error, jump over this turn
 				}
 			}
 		}
