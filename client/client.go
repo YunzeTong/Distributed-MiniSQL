@@ -42,29 +42,64 @@ func (client *Client) Init(masterIP string) {
 }
 
 func (client *Client) Run() {
+	execFileMode := false
+	var commands []string
+	indexOfCommand := 0
 	for {
-		// read a complete sql from keyboard, store it in input
-		fmt.Println("new message>>> input your SQL command: ")
-		input := ""      // user's complete input
-		part_input := "" // part of the input, all of them compose input
-
-		for len(part_input) == 0 || part_input[len(part_input)-1] != ';' {
-			part_input, _ = bufio.NewReader(os.Stdin).ReadString('\n')
-			part_input = strings.TrimRight(part_input, "\r\n")
-			// fmt.Println("[part test]" + part_input)
-			if len(part_input) == 0 {
-				continue
+		input := "" // user's complete input
+		if execFileMode {
+			// execute SQL from a txt
+			input = commands[indexOfCommand]
+			input = strings.Trim(input, " ")
+			indexOfCommand += 1
+			if indexOfCommand == len(commands)-1 {
+				indexOfCommand = 0
+				execFileMode = false
+				commands = commands[0:0]
 			}
-			input += part_input
-			input += " "
-		}
+		} else {
+			// read a complete sql from keyboard, store it in input
+			fmt.Println("new message>>> input your SQL command: ")
+			// input := ""      // user's complete input
+			part_input := "" // part of the input, all of them compose input
 
-		input = strings.Trim(input, " ")
+			for len(part_input) == 0 || part_input[len(part_input)-1] != ';' {
+				part_input, _ = bufio.NewReader(os.Stdin).ReadString('\n')
+				part_input = strings.TrimRight(part_input, "\r\n")
+				if len(part_input) == 0 {
+					continue
+				}
+				input += part_input
+				input += " "
+			}
 
-		if input == "quit" {
-			//客户端直接退出
-			fmt.Println("new message>>> You choose to quit, bye!")
-			break
+			input = strings.Trim(input, " ")
+
+			if input == "quit" {
+				//客户端直接退出
+				fmt.Println("new message>>> You choose to quit, bye!")
+				break
+			} else {
+				command := strings.ReplaceAll(input, "\\s+", " ")
+				words := strings.Split(command, " ")
+				if len(words) == 2 && words[0] == "execfile" {
+					fileName := words[1]
+					fileName = fileName[0:strings.Index(fileName, ";")]
+					f, err := os.Open(fileName)
+					if err != nil {
+						fmt.Println("INPUT FORMAT ERROR>>> choose execfile but the file can't be found")
+					} else {
+						scanner := bufio.NewScanner(f)
+						for scanner.Scan() {
+							commands = append(commands, scanner.Text())
+						}
+						execFileMode = true
+						indexOfCommand = 0
+						fmt.Println("HINT>>> start to execute command in file")
+					}
+					continue
+				}
+			}
 		}
 
 		op, table, index, err := client.preprocessInput(input)
