@@ -75,10 +75,16 @@ func (client *Client) Run() {
 
 			input = strings.Trim(input, " ")
 
-			if input == "quit" {
-				// client exit directly
-				fmt.Println("new message>>> You choose to quit, bye!")
-				break
+			if strings.HasPrefix(input, "quit") {
+				quitCommand := strings.Trim(input, "; ")
+				if quitCommand == "quit" {
+					// client exit directly
+					fmt.Println("new message>>> You choose to quit, bye!")
+					break
+				} else {
+					fmt.Println("SYSTEM HINT>>> invalid format of SQL command")
+					continue
+				}
 			} else {
 				command := strings.ReplaceAll(input, "\\s+", " ")
 				words := strings.Split(command, " ")
@@ -229,13 +235,15 @@ func (client *Client) Run() {
 			}
 
 			call, err := TimeoutRPC(rpcRegion.Go("Region.Process", &input, &result, nil), TIMEOUT)
-			if err != nil {
-				fmt.Println("SYSTEM HINT>>> region process timeout")
-			}
-			if call.Error != nil {
-				//TODO: 这里的error有可能是sql错误导致或者ip旧了rpcRegion拿不到导致
-				fmt.Println("SYSTEM HINT>>> can't obtain result in first phase, maybe old ip or SQL command error")
-				fmt.Println("SYSTEM HINT>>> start second phase operation...")
+			if err != nil || call.Error != nil {
+				if err != nil {
+					fmt.Println("SYSTEM HINT>>> region process timeout")
+					fmt.Println("SYSTEM HINT>>> start to reconnect with second phase operation...")
+				} else {
+					//TODO: 这里的error有可能是sql错误导致或者ip旧了rpcRegion拿不到导致
+					fmt.Println("SYSTEM HINT>>> can't obtain result in first phase, maybe old ip or SQL command error")
+					fmt.Println("SYSTEM HINT>>> start second phase operation...")
+				}
 
 				// ip, rpcRegion is old，select for twice
 				// first delete old cache
