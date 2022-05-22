@@ -119,7 +119,8 @@ func (client *Client) Run() {
 			args, ip := TableArgs{Table: table, SQL: input}, ""
 			call, err := TimeoutRPC(client.rpcMaster.Go("Master.CreateTable", &args, &ip, nil), TIMEOUT)
 			if err != nil {
-				fmt.Println("SYSTEM HINT>>> timeout")
+				fmt.Println("SYSTEM HINT>>> timeout, master down!")
+				break
 			}
 			if call.Error != nil {
 				fmt.Println("RESULT>>> create table failed")
@@ -131,7 +132,8 @@ func (client *Client) Run() {
 			args, dummy := TableArgs{Table: table, SQL: input}, false
 			call, err := TimeoutRPC(client.rpcMaster.Go("Master.DropTable", &args, &dummy, nil), TIMEOUT)
 			if err != nil {
-				fmt.Println("SYSTEM HINT>>> timeout")
+				fmt.Println("SYSTEM HINT>>> timeout, master down!")
+				break
 			}
 			if call.Error != nil {
 				fmt.Println("RESULT>>> drop table failed")
@@ -146,7 +148,8 @@ func (client *Client) Run() {
 			// tables = make([]string, 0)
 			call, err := TimeoutRPC(client.rpcMaster.Go("Master.ShowTables", &dummyArgs, &tables, nil), TIMEOUT)
 			if err != nil {
-				fmt.Println("SYSTEM HINT>>> timeout")
+				fmt.Println("SYSTEM HINT>>> timeout, master down!")
+				break
 			}
 			if call.Error != nil {
 				fmt.Println("RESULT>>> show tables failed")
@@ -164,7 +167,8 @@ func (client *Client) Run() {
 			args, ip := IndexArgs{Index: index, Table: table, SQL: input}, ""
 			call, err := TimeoutRPC(client.rpcMaster.Go("Master.CreateIndex", &args, &ip, nil), TIMEOUT)
 			if err != nil {
-				fmt.Println("RESULT>>> timeout")
+				fmt.Println("SYSTEM HINT>>> timeout, master down!")
+				break
 			}
 			if call.Error != nil {
 				fmt.Println("RESULT>>> create indexes failed")
@@ -176,7 +180,8 @@ func (client *Client) Run() {
 			args, dummy := IndexArgs{Index: index, SQL: input}, false
 			call, err := TimeoutRPC(client.rpcMaster.Go("Master.DropIndex", &args, &dummy, nil), TIMEOUT)
 			if err != nil {
-				fmt.Println("SYSTEM HINT>>> timeout")
+				fmt.Println("SYSTEM HINT>>> timeout, master down!")
+				break
 			}
 			if call.Error != nil {
 				fmt.Println("RESULT>>> drop indexes failed")
@@ -190,7 +195,8 @@ func (client *Client) Run() {
 			// indices = make(map[string]string)
 			call, err := TimeoutRPC(client.rpcMaster.Go("Master.ShowIndices", &dummyArgs, &indices, nil), TIMEOUT)
 			if err != nil {
-				fmt.Println("SYSTEM HINT>>> timeout")
+				fmt.Println("SYSTEM HINT>>> timeout, master down!")
+				break
 			}
 			if call.Error != nil {
 				fmt.Println("RESULT>>> show indices failed")
@@ -386,7 +392,7 @@ func (client *Client) updateCache(table string) string {
 	// call Master.TableIP rpc
 	call, err := TimeoutRPC(client.rpcMaster.Go("Master.TableIP", &table, &ip, nil), TIMEOUT)
 	if err != nil {
-		fmt.Println("SYSTEM HINT>>> during update cache, timeout")
+		fmt.Println("SYSTEM HINT>>> during update cache, timeout, master down")
 		return ip
 	}
 	if call.Error != nil {
