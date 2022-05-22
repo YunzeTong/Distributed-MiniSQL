@@ -1,7 +1,6 @@
 package master
 
 import (
-	"log"
 	"math"
 	"net"
 	"net/http"
@@ -66,6 +65,7 @@ func (master *Master) addTable(table, ip string) {
 }
 
 func (master *Master) deleteTable(table, ip string) {
+	master.deleteTableIndices(table)
 	delete(master.tableIP, table)
 	DeleteFromSlice(master.serverTables[ip], table)
 }
@@ -98,5 +98,14 @@ func (master *Master) transferServerTables(src, dst string) {
 		master.tableIP[table] = dst
 	}
 	master.serverTables[dst] = pTables
-	log.Printf("transferred %v's table to %v", src, dst)
+	delete(master.serverTables, src)
+}
+
+func (master *Master) removeServerTables(ip string) {
+	pTables := master.serverTables[ip]
+	for _, table := range *pTables {
+		master.deleteTableIndices(table)
+		delete(master.tableIP, table)
+	}
+	delete(master.serverTables, ip)
 }

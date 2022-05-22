@@ -54,7 +54,6 @@ func (master *Master) DropTable(args *TableArgs, dummyReply *bool) error {
 		return call.Error // drop err
 	}
 	master.deleteTable(args.Table, ip)
-	master.deleteTableIndices(args.Table)
 	return nil
 }
 
