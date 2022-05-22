@@ -19,7 +19,7 @@ func (master *Master) CreateTable(args *TableArgs, ip *string) error {
 	client := master.regionClients[bestServer]
 
 	var dummy string
-	call, err := TimeoutRPC(client.Go("Region.Process", &args.SQL, &dummy, nil), TIMEOUT)
+	call, err := TimeoutRPC(client.Go("Region.Process", &args.SQL, &dummy, nil), TIMEOUT_S)
 	if err != nil {
 		log.Printf("Region.Process timeout")
 		return err // timeout
@@ -44,7 +44,7 @@ func (master *Master) DropTable(args *TableArgs, dummyReply *bool) error {
 	client := master.regionClients[ip]
 
 	var dummy string
-	call, err := TimeoutRPC(client.Go("Region.Process", &args.SQL, &dummy, nil), TIMEOUT)
+	call, err := TimeoutRPC(client.Go("Region.Process", &args.SQL, &dummy, nil), TIMEOUT_S)
 	if err != nil {
 		log.Printf("Region.Process timeout")
 		return err // timeout
@@ -76,7 +76,7 @@ func (master *Master) CreateIndex(args *IndexArgs, ip *string) error {
 	client := master.regionClients[*ip]
 
 	var dummy string
-	call, err := TimeoutRPC(client.Go("Region.Process", &args.SQL, &dummy, nil), TIMEOUT)
+	call, err := TimeoutRPC(client.Go("Region.Process", &args.SQL, &dummy, nil), TIMEOUT_S)
 	if err != nil {
 		log.Printf("Region.Process timeout")
 		return err // timeout
@@ -100,7 +100,7 @@ func (master *Master) DropIndex(args *IndexArgs, dummyReply *bool) error {
 	client := master.regionClients[master.tableIP[tbl]]
 
 	var dummy string
-	call, err := TimeoutRPC(client.Go("Region.Process", &args.SQL, &dummy, nil), TIMEOUT)
+	call, err := TimeoutRPC(client.Go("Region.Process", &args.SQL, &dummy, nil), TIMEOUT_S)
 	if err != nil {
 		log.Printf("Region.Process timeout")
 		return err // timeout

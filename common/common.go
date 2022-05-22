@@ -11,7 +11,9 @@ import (
 type Identity int
 
 const (
-	TIMEOUT = 1000
+	TIMEOUT_S = 1000
+	TIMEOUT_M = 2000
+	TIMEOUT_L = 10000
 
 	// networking
 	NETWORK = "tcp"

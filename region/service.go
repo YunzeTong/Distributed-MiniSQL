@@ -23,7 +23,7 @@ func (region *Region) Process(input *string, reply *string) error {
 			if err != nil {
 				fmt.Println("fail to connect to backup region: " + region.backupIP)
 			}
-			call, err := TimeoutRPC(rpcBackupRegion.Go("Region.Process", &input, &reply, nil), TIMEOUT)
+			call, err := TimeoutRPC(rpcBackupRegion.Go("Region.Process", &input, &reply, nil), TIMEOUT_S)
 			if err != nil {
 				fmt.Println("timeout")
 			}
@@ -44,7 +44,7 @@ func (region *Region) AssignBackup(ip *string, dummyReply *bool) error {
 	} else {
 		region.backupClient = client
 		region.backupIP = *ip
-		call, err := TimeoutRPC(region.backupClient.Go("Region.DownloadSnapshot", &region.hostIP, &dummyReply, nil), TIMEOUT)
+		call, err := TimeoutRPC(region.backupClient.Go("Region.DownloadSnapshot", &region.hostIP, &dummyReply, nil), TIMEOUT_L)
 		if err != nil {
 			fmt.Println("timeout")
 			return err

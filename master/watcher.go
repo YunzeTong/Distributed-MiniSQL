@@ -48,7 +48,7 @@ func (master *Master) watch() {
 						if ok {
 							client := master.regionClients[backedIP]
 							var dummyArgs, dummyReply bool
-							call, err := TimeoutRPC(client.Go("Region.RemoveBackup", &dummyArgs, &dummyReply, nil), TIMEOUT)
+							call, err := TimeoutRPC(client.Go("Region.RemoveBackup", &dummyArgs, &dummyReply, nil), TIMEOUT_S)
 							if err != nil {
 								log.Printf("%v's Region.RemoveBackup timeout", backedIP)
 							}
@@ -81,7 +81,7 @@ func (master *Master) placeBackup(backupIP string) {
 			client := master.regionClients[ip]
 			log.Printf("backup ip: %v", backupIP)
 			var dummy bool
-			call, err := TimeoutRPC(client.Go("Region.AssignBackup", &backupIP, &dummy, nil), TIMEOUT)
+			call, err := TimeoutRPC(client.Go("Region.AssignBackup", &backupIP, &dummy, nil), TIMEOUT_L)
 			if err != nil {
 				log.Printf("%v's Region.AssignBackup timeout", ip)
 			}

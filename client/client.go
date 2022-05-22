@@ -117,7 +117,7 @@ func (client *Client) Run() {
 		case CREATE_TBL:
 			// call Master.CreateTable rpc
 			args, ip := TableArgs{Table: table, SQL: input}, ""
-			call, err := TimeoutRPC(client.rpcMaster.Go("Master.CreateTable", &args, &ip, nil), TIMEOUT)
+			call, err := TimeoutRPC(client.rpcMaster.Go("Master.CreateTable", &args, &ip, nil), TIMEOUT_M)
 			if err != nil {
 				fmt.Println("SYSTEM HINT>>> timeout, master down!")
 				break
@@ -130,7 +130,7 @@ func (client *Client) Run() {
 		case DROP_TBL:
 			// call Master.DropTable rpc
 			args, dummy := TableArgs{Table: table, SQL: input}, false
-			call, err := TimeoutRPC(client.rpcMaster.Go("Master.DropTable", &args, &dummy, nil), TIMEOUT)
+			call, err := TimeoutRPC(client.rpcMaster.Go("Master.DropTable", &args, &dummy, nil), TIMEOUT_M)
 			if err != nil {
 				fmt.Println("SYSTEM HINT>>> timeout, master down!")
 				break
@@ -146,7 +146,7 @@ func (client *Client) Run() {
 			var dummyArgs bool
 			var tables []string
 			// tables = make([]string, 0)
-			call, err := TimeoutRPC(client.rpcMaster.Go("Master.ShowTables", &dummyArgs, &tables, nil), TIMEOUT)
+			call, err := TimeoutRPC(client.rpcMaster.Go("Master.ShowTables", &dummyArgs, &tables, nil), TIMEOUT_S)
 			if err != nil {
 				fmt.Println("SYSTEM HINT>>> timeout, master down!")
 				break
@@ -165,7 +165,7 @@ func (client *Client) Run() {
 			// TODO: call Master.CreateIndex
 			// TODO: 返回的ip是要update tableip map吗？
 			args, ip := IndexArgs{Index: index, Table: table, SQL: input}, ""
-			call, err := TimeoutRPC(client.rpcMaster.Go("Master.CreateIndex", &args, &ip, nil), TIMEOUT)
+			call, err := TimeoutRPC(client.rpcMaster.Go("Master.CreateIndex", &args, &ip, nil), TIMEOUT_M)
 			if err != nil {
 				fmt.Println("SYSTEM HINT>>> timeout, master down!")
 				break
@@ -178,7 +178,7 @@ func (client *Client) Run() {
 		case DROP_IDX:
 			// TODO: call Master.DropIndex
 			args, dummy := IndexArgs{Index: index, SQL: input}, false
-			call, err := TimeoutRPC(client.rpcMaster.Go("Master.DropIndex", &args, &dummy, nil), TIMEOUT)
+			call, err := TimeoutRPC(client.rpcMaster.Go("Master.DropIndex", &args, &dummy, nil), TIMEOUT_M)
 			if err != nil {
 				fmt.Println("SYSTEM HINT>>> timeout, master down!")
 				break
@@ -193,7 +193,7 @@ func (client *Client) Run() {
 			var dummyArgs bool
 			var indices map[string]string
 			// indices = make(map[string]string)
-			call, err := TimeoutRPC(client.rpcMaster.Go("Master.ShowIndices", &dummyArgs, &indices, nil), TIMEOUT)
+			call, err := TimeoutRPC(client.rpcMaster.Go("Master.ShowIndices", &dummyArgs, &indices, nil), TIMEOUT_S)
 			if err != nil {
 				fmt.Println("SYSTEM HINT>>> timeout, master down!")
 				break
@@ -240,7 +240,7 @@ func (client *Client) Run() {
 				}
 			}
 
-			call, err := TimeoutRPC(rpcRegion.Go("Region.Process", &input, &result, nil), TIMEOUT)
+			call, err := TimeoutRPC(rpcRegion.Go("Region.Process", &input, &result, nil), TIMEOUT_S)
 			if err != nil || call.Error != nil {
 				if err != nil {
 					fmt.Println("SYSTEM HINT>>> region process timeout")
@@ -268,7 +268,7 @@ func (client *Client) Run() {
 					break
 				}
 				// call Region.Process rpc again
-				call, err := TimeoutRPC(new_rpcRegion.Go("Region.Process", &input, &result, nil), TIMEOUT)
+				call, err := TimeoutRPC(new_rpcRegion.Go("Region.Process", &input, &result, nil), TIMEOUT_S)
 				if err != nil {
 					fmt.Println("SYSTEM HINT>>> region process timeout")
 					break
@@ -390,7 +390,7 @@ func (client *Client) preprocessInput(input string) (TableOp, string, string, er
 func (client *Client) updateCache(table string) string {
 	ip := ""
 	// call Master.TableIP rpc
-	call, err := TimeoutRPC(client.rpcMaster.Go("Master.TableIP", &table, &ip, nil), TIMEOUT)
+	call, err := TimeoutRPC(client.rpcMaster.Go("Master.TableIP", &table, &ip, nil), TIMEOUT_S)
 	if err != nil {
 		fmt.Println("SYSTEM HINT>>> during update cache, timeout, master down")
 		return ip
