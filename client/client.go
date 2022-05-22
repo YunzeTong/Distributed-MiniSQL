@@ -61,8 +61,6 @@ func (client *Client) Run() {
 
 		input = strings.Trim(input, " ")
 
-		// fmt.Println("[风神翼龙test in loop]input: " + input)
-
 		if input == "quit" {
 			//客户端直接退出
 			fmt.Println("new message>>> You choose to quit, bye!")
@@ -270,7 +268,6 @@ func (client *Client) preprocessInput(input string) (TableOp, string, string, er
 			if strings.Contains(table, "(") { // 如果被划分成了 student(name varchar, ...)
 				table = table[0:strings.Index(table, "(")]
 			}
-			fmt.Println("[最终可删除]table:" + table)
 		} else if words[1] == "index" {
 			op = CREATE_IDX
 			if len(words) < 5 {
@@ -278,12 +275,10 @@ func (client *Client) preprocessInput(input string) (TableOp, string, string, er
 				return op, table, index, err
 			}
 			index = words[2]
-			fmt.Println("[最终可删除]index:" + index)
 			table = words[4]
 			if strings.Contains(table, "(") { // 如果被划分成了 student(name)
 				table = table[0:strings.Index(table, "(")]
 			}
-			fmt.Println("[最终可删除]table:" + table)
 		} else {
 			err = errors.New("the type you create can't be recognized")
 		}
