@@ -36,16 +36,10 @@ func (region *Region) Init(masterIP, hostIP string) {
 
 func (region *Region) Run() {
 	// connect to local etcd server
-	var err error
-	region.etcdClient, err = clientv3.New(clientv3.Config{
+	region.etcdClient, _ = clientv3.New(clientv3.Config{
 		Endpoints:   []string{"http://" + HOST_ADDR},
 		DialTimeout: 5 * time.Second,
 	})
-	if err != nil {
-		log.Println(err)
-	} else {
-		log.Println("etcd success")
-	}
 	defer region.etcdClient.Close()
 	go region.stayOnline()
 
@@ -55,13 +49,13 @@ func (region *Region) Run() {
 	l, _ := net.Listen("tcp", REGION_PORT)
 	go http.Serve(l, nil)
 
-	log.Println("rpc register")
-
 	// connect to master
-	region.masterClient, err = rpc.DialHTTP("tcp", region.masterIP+MASTER_PORT)
+	client, err := rpc.DialHTTP("tcp", region.masterIP+MASTER_PORT)
 	if err != nil {
 		log.Printf("rpc.DialHTTP err: %v", region.masterIP+MASTER_PORT)
+		return
 	}
+	region.masterClient = client
 
 	for {
 		time.Sleep(10 * time.Second)
@@ -71,33 +65,24 @@ func (region *Region) Run() {
 // https://pkg.go.dev/go.etcd.io/etcd@v3.3.27+incompatible/clientv3#Lease
 func (region *Region) stayOnline() {
 	for {
-		log.Printf("%v stayOnline iter", region.hostIP)
 		resp, err := region.etcdClient.Grant(context.Background(), 5)
 		if err != nil {
-			log.Println("etcd grant error")
+			log.Printf("etcd grant error")
 			continue
-		} else {
-			log.Println("etcd grant finish")
 		}
 
 		_, err = region.etcdClient.Put(context.Background(), region.hostIP, "", clientv3.WithLease(resp.ID))
 		if err != nil {
-			log.Println("etcd put error")
+			log.Printf("etcd put error")
 			continue
-		} else {
-			log.Println("etcd put finish")
 		}
 
 		ch, err := region.etcdClient.KeepAlive(context.Background(), resp.ID)
 		if err != nil {
-			log.Println("etcd keepalive error")
+			log.Printf("etcd keepalive error")
 			continue
-		} else {
-			log.Println("etcd keepalive finish")
 		}
-		// for ka := range ch {
-		// 	log.Println(ka)
-		// }
+
 		for _ = range ch {
 		}
 	}

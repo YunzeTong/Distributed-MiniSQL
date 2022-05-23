@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"net/rpc"
-	"strings"
 
 	. "Distributed-MiniSQL/common"
 	"Distributed-MiniSQL/minisql/manager/api"
@@ -12,23 +11,24 @@ import (
 )
 
 func (region *Region) Process(input *string, reply *string) error {
-	log.Printf("%v's Region.Process called: %v", region.hostIP, *input)
+	log.Printf("Region.Process called: %v", *input)
 	res, err := region.processSQL(*input)
 	if err != nil {
-		return fmt.Errorf("%v's Region.Process failed", region.hostIP)
+		log.Printf("Region.Process failed")
+		return fmt.Errorf("Region.Process failed")
 	} else {
 		*reply = res
 		if region.backupIP != "" {
 			rpcBackupRegion, err := rpc.DialHTTP("tcp", region.backupIP+REGION_PORT)
 			if err != nil {
-				fmt.Println("fail to connect to backup region: " + region.backupIP)
+				log.Printf("fail to connect to backup %v", region.backupIP)
+				return nil
 			}
-			call, err := TimeoutRPC(rpcBackupRegion.Go("Region.Process", &input, &reply, nil), TIMEOUT_S)
+			// backup's Region.Process must return nil error
+			_, err = TimeoutRPC(rpcBackupRegion.Go("Region.Process", &input, &reply, nil), TIMEOUT_S)
 			if err != nil {
-				fmt.Println("timeout")
-			}
-			if call.Error != nil {
-				fmt.Println("[backup region] failed")
+				log.Printf("%v's Region.Process timeout", region.backupIP)
+				return nil
 			}
 		}
 	}
@@ -37,23 +37,17 @@ func (region *Region) Process(input *string, reply *string) error {
 
 func (region *Region) AssignBackup(ip *string, dummyReply *bool) error {
 	log.Printf("Region.AssignBackup called: backup ip: %v", *ip)
-	// connect to backup
 	client, err := rpc.DialHTTP("tcp", *ip+REGION_PORT)
 	if err != nil {
 		log.Printf("rpc.DialHTTP err: %v", *ip+REGION_PORT)
 	} else {
 		region.backupClient = client
 		region.backupIP = *ip
-		call, err := TimeoutRPC(region.backupClient.Go("Region.DownloadSnapshot", &region.hostIP, &dummyReply, nil), TIMEOUT_L)
+		_, err = TimeoutRPC(region.backupClient.Go("Region.DownloadSnapshot", &region.hostIP, &dummyReply, nil), TIMEOUT_L)
 		if err != nil {
-			fmt.Println("timeout")
-			return err
+			log.Printf("%v's Region.DownloadSnapshot timeout", *ip)
+			region.RemoveBackup(nil, nil)
 		}
-		if call.Error != nil {
-			fmt.Println("[backup region's downloadSnapshot] failed")
-			return call.Error
-		}
-		return nil
 	}
 	return err
 }
@@ -61,6 +55,9 @@ func (region *Region) AssignBackup(ip *string, dummyReply *bool) error {
 func (region *Region) RemoveBackup(dummyArgs, dummyReply *bool) error {
 	log.Printf("Region.RemoveBackup called: remove %v", region.backupIP)
 	region.backupIP = ""
+	if region.backupClient != nil {
+		region.backupClient.Close()
+	}
 	region.backupClient = nil
 	return nil
 }
@@ -76,10 +73,10 @@ func (region *Region) DownloadSnapshot(ip *string, dummyReply *bool) error {
 func (region *Region) processSQL(sql string) (string, error) {
 	res := interpreter.Interpret(sql)
 
-	if strings.HasPrefix(res, "!") {
+	if res == "" {
 		return res, fmt.Errorf("process failed")
 	}
 
-	api.Store() // pending
+	api.Store()
 	return res, nil
 }

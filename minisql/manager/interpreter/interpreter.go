@@ -137,7 +137,7 @@ func parseInsert(statement string) string {
 	}
 	api.InsertRow(tableName, tableRow)
 	fmt.Println("-->Insert successfully")
-	//result.WriteString("-->Insert successfully")
+	result.WriteString("-->Insert successfully")
 	return result.String()
 }
 
